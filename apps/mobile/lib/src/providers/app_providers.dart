@@ -159,6 +159,16 @@ class ReaderSettingsController extends _$ReaderSettingsController {
 
   void setPageTurnId(String pageTurnId) => _update(state.copyWith(pageTurnId: pageTurnId));
 
+  void setFontFamilyId(String fontFamilyId) => _update(state.copyWith(fontFamilyId: fontFamilyId));
+
+  void setParagraphSpacing(double value) => _update(state.copyWith(paragraphSpacing: value));
+
+  void setFirstLineIndent(double value) => _update(state.copyWith(firstLineIndent: value));
+
+  void setHorizontalPadding(double value) => _update(state.copyWith(horizontalPadding: value));
+
+  void setTextAlignId(String textAlignId) => _update(state.copyWith(textAlignId: textAlignId));
+
   void _update(ReaderSettings next) {
     state = next.normalized();
     unawaited(ref.read(settingsRepositoryProvider).save(state).catchError((Object _) {}));

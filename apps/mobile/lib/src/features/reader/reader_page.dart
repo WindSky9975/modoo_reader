@@ -35,8 +35,10 @@ class ReaderPage extends ConsumerStatefulWidget {
 }
 
 class _ReaderPageState extends ConsumerState<ReaderPage> {
-  static const double _horizontalPadding = 24;
   static const double _verticalPadding = 20;
+
+  /// Hair of tracking keeps CJK punctuation from touching the next glyph.
+  static const double _letterSpacing = 0.2;
 
   final PageController _pageController = PageController();
 
@@ -121,15 +123,31 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   /// Builds a [LayoutSpec] from the saved typography and the current box.
+  ///
+  /// Everything that changes line boxes has to come from here: the paginator
+  /// and the page painter both read the spec, so a saved setting can never
+  /// change one without the other.
   LayoutSpec _spec(ReaderSettings settings) => LayoutSpec(
-    fontFamily: 'System',
+    fontFamily: _fontFamilyFor(settings.fontFamilyId),
     fontSize: settings.fontSize,
     lineHeight: settings.lineHeight,
-    paragraphSpacing: 0.6,
-    horizontalPadding: _horizontalPadding,
+    paragraphSpacing: settings.paragraphSpacing,
+    horizontalPadding: settings.horizontalPadding,
     verticalPadding: _verticalPadding,
-    letterSpacing: 0.2,
+    letterSpacing: _letterSpacing,
+    textAlign: settings.textAlignId == 'justify' ? LayoutTextAlign.justify : LayoutTextAlign.start,
   );
+
+  /// Maps the stored family id onto a family name the platform resolves.
+  ///
+  /// 'system' keeps the platform default; the other two are generic families
+  /// every Android and desktop install ships, so no font file is bundled
+  /// (ADR-0007).
+  static String _fontFamilyFor(String fontFamilyId) => switch (fontFamilyId) {
+    'serif' => 'serif',
+    'monospace' => 'monospace',
+    _ => 'System',
+  };
 
   Future<void> _paginate({
     required Chapter chapter,
@@ -935,7 +953,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final double width = math.max(80, constraints.maxWidth - _horizontalPadding * 2);
+        final double horizontalPadding = settings.horizontalPadding;
+        final double width = math.max(80, constraints.maxWidth - horizontalPadding * 2);
         final EdgeInsets insets = MediaQuery.paddingOf(context);
         final double topInset = math.max(_verticalPadding, insets.top + 8);
         final double bottomInset = math.max(_verticalPadding, insets.bottom + 8);
@@ -1026,22 +1045,21 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                     // chrome is hidden: the page box is measured with the same
                     // insets, so the layout and the drawing agree.
                     padding: EdgeInsets.fromLTRB(
-                      _horizontalPadding,
+                      horizontalPadding,
                       math.max(_verticalPadding, MediaQuery.paddingOf(context).top + 8),
-                      _horizontalPadding,
+                      horizontalPadding,
                       math.max(_verticalPadding, MediaQuery.paddingOf(context).bottom + 8),
                     ),
                     child: SizedBox.expand(
                       // Long-press selects text and the platform context menu
-                      // offers copy; taps still reach the GestureDetector above.
+                      // offers copy; taps still reach the Listener above.
                       child: SelectionArea(
                         child: Text(
                           text.substring(from, to).trim(),
-                          style: TextStyle(
-                            fontSize: settings.fontSize,
-                            height: settings.lineHeight,
-                            letterSpacing: 0.2,
-                          ),
+                          // Same style and alignment the paginator measured
+                          // with, otherwise page breaks drift from the glyphs.
+                          style: readerTextStyle(spec),
+                          textAlign: readerTextAlign(spec),
                         ),
                       ),
                     ),
@@ -1172,7 +1190,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               readerSettingsControllerProvider.notifier,
             );
             return SafeArea(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1201,7 +1219,69 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       divisions: 12,
                       onChanged: controller.setLineHeight,
                     ),
+                    Text(
+                      '${context.l10n.readerParagraphSpacing}  '
+                      '${settings.paragraphSpacing.toStringAsFixed(1)}',
+                    ),
+                    Slider(
+                      value: settings.paragraphSpacing,
+                      min: 0,
+                      max: 1.5,
+                      divisions: 15,
+                      onChanged: controller.setParagraphSpacing,
+                    ),
+                    Text('${context.l10n.readerMargin}  ${settings.horizontalPadding.round()}'),
+                    Slider(
+                      value: settings.horizontalPadding,
+                      min: 8,
+                      max: 40,
+                      divisions: 16,
+                      onChanged: controller.setHorizontalPadding,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(context.l10n.readerFont, style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: <ButtonSegment<String>>[
+                        ButtonSegment<String>(
+                          value: 'system',
+                          label: Text(context.l10n.readerFontSystem),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'serif',
+                          label: Text(context.l10n.readerFontSerif),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'monospace',
+                          label: Text(context.l10n.readerFontMono),
+                        ),
+                      ],
+                      selected: <String>{settings.fontFamilyId},
+                      onSelectionChanged: (Set<String> selection) =>
+                          controller.setFontFamilyId(selection.first),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      context.l10n.readerTextAlign,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: <ButtonSegment<String>>[
+                        ButtonSegment<String>(
+                          value: 'start',
+                          label: Text(context.l10n.readerAlignStart),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'justify',
+                          label: Text(context.l10n.readerAlignJustify),
+                        ),
+                      ],
+                      selected: <String>{settings.textAlignId},
+                      onSelectionChanged: (Set<String> selection) =>
+                          controller.setTextAlignId(selection.first),
+                    ),
+                    const SizedBox(height: 12),
                     Text(context.l10n.settingsTheme, style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 8),
                     // Background swatches, the way the reference reader offers

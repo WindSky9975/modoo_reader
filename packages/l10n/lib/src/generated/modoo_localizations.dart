@@ -214,6 +214,60 @@ abstract class ModooLocalizations {
   /// **'行距'**
   String get readerLineHeight;
 
+  /// Label of the paragraph spacing slider.
+  ///
+  /// In zh, this message translates to:
+  /// **'段距'**
+  String get readerParagraphSpacing;
+
+  /// Label of the page margin slider.
+  ///
+  /// In zh, this message translates to:
+  /// **'页边距'**
+  String get readerMargin;
+
+  /// Label of the font family selector.
+  ///
+  /// In zh, this message translates to:
+  /// **'字体'**
+  String get readerFont;
+
+  /// Font family option: the platform default.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认'**
+  String get readerFontSystem;
+
+  /// Font family option: serif.
+  ///
+  /// In zh, this message translates to:
+  /// **'衬线'**
+  String get readerFontSerif;
+
+  /// Font family option: monospace.
+  ///
+  /// In zh, this message translates to:
+  /// **'等宽'**
+  String get readerFontMono;
+
+  /// Label of the text alignment selector.
+  ///
+  /// In zh, this message translates to:
+  /// **'对齐'**
+  String get readerTextAlign;
+
+  /// Text alignment option: ragged right.
+  ///
+  /// In zh, this message translates to:
+  /// **'左对齐'**
+  String get readerAlignStart;
+
+  /// Text alignment option: both edges flush.
+  ///
+  /// In zh, this message translates to:
+  /// **'两端对齐'**
+  String get readerAlignJustify;
+
   /// Label of the page turn mode selector.
   ///
   /// In zh, this message translates to:

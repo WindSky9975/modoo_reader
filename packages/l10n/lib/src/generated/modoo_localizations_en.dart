@@ -77,6 +77,33 @@ class ModooLocalizationsEn extends ModooLocalizations {
   String get readerLineHeight => 'Line height';
 
   @override
+  String get readerParagraphSpacing => 'Paragraph spacing';
+
+  @override
+  String get readerMargin => 'Margins';
+
+  @override
+  String get readerFont => 'Font';
+
+  @override
+  String get readerFontSystem => 'Default';
+
+  @override
+  String get readerFontSerif => 'Serif';
+
+  @override
+  String get readerFontMono => 'Mono';
+
+  @override
+  String get readerTextAlign => 'Alignment';
+
+  @override
+  String get readerAlignStart => 'Left';
+
+  @override
+  String get readerAlignJustify => 'Justified';
+
+  @override
   String get readerPageTurn => 'Page turn';
 
   @override

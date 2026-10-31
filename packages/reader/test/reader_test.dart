@@ -79,6 +79,7 @@ void main() {
         base.copyWith(fontFamily: 'Noto Serif CJK'),
         base.copyWith(fontVersion: 2),
         base.copyWith(flags: Flags.hangingPunctuation),
+        base.copyWith(textAlign: LayoutTextAlign.justify),
       ];
       final hashes = <int>{base.layoutHash, ...variants.map((variant) => variant.layoutHash)};
       expect(hashes, hasLength(variants.length + 1));

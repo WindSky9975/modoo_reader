@@ -77,6 +77,33 @@ class ModooLocalizationsZh extends ModooLocalizations {
   String get readerLineHeight => '行距';
 
   @override
+  String get readerParagraphSpacing => '段距';
+
+  @override
+  String get readerMargin => '页边距';
+
+  @override
+  String get readerFont => '字体';
+
+  @override
+  String get readerFontSystem => '默认';
+
+  @override
+  String get readerFontSerif => '衬线';
+
+  @override
+  String get readerFontMono => '等宽';
+
+  @override
+  String get readerTextAlign => '对齐';
+
+  @override
+  String get readerAlignStart => '左对齐';
+
+  @override
+  String get readerAlignJustify => '两端对齐';
+
+  @override
   String get readerPageTurn => '翻页';
 
   @override

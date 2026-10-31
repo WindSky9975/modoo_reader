@@ -1360,7 +1360,7 @@ final class ReaderSettingsControllerProvider
   }
 }
 
-String _$readerSettingsControllerHash() => r'b7eb4bc81a1567f2e0cba5a9fc2a21aef30dc81d';
+String _$readerSettingsControllerHash() => r'b2bf1ed787de1448553b5ce79d171e86315b8999';
 
 /// Reader typography, persisted on every change.
 ///

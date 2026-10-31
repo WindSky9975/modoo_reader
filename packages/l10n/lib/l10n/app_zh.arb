@@ -98,6 +98,42 @@
   "@readerLineHeight": {
     "description": "Label of the line height slider."
   },
+  "readerParagraphSpacing": "段距",
+  "@readerParagraphSpacing": {
+    "description": "Label of the paragraph spacing slider."
+  },
+  "readerMargin": "页边距",
+  "@readerMargin": {
+    "description": "Label of the page margin slider."
+  },
+  "readerFont": "字体",
+  "@readerFont": {
+    "description": "Label of the font family selector."
+  },
+  "readerFontSystem": "默认",
+  "@readerFontSystem": {
+    "description": "Font family option: the platform default."
+  },
+  "readerFontSerif": "衬线",
+  "@readerFontSerif": {
+    "description": "Font family option: serif."
+  },
+  "readerFontMono": "等宽",
+  "@readerFontMono": {
+    "description": "Font family option: monospace."
+  },
+  "readerTextAlign": "对齐",
+  "@readerTextAlign": {
+    "description": "Label of the text alignment selector."
+  },
+  "readerAlignStart": "左对齐",
+  "@readerAlignStart": {
+    "description": "Text alignment option: ragged right."
+  },
+  "readerAlignJustify": "两端对齐",
+  "@readerAlignJustify": {
+    "description": "Text alignment option: both edges flush."
+  },
   "readerPageTurn": "翻页",
   "@readerPageTurn": {
     "description": "Label of the page turn mode selector."

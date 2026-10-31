@@ -1,5 +1,17 @@
 import 'dart:convert';
 
+/// How lines that do not end a paragraph are aligned.
+///
+/// Kept Flutter-free here (the reader contract has no widget dependency) and
+/// translated to `TextAlign` in `packages/ui`, which owns the `TextPainter`.
+enum LayoutTextAlign {
+  /// Ragged right; the usual choice for CJK novels.
+  start,
+
+  /// Both edges flush; the last line of a paragraph stays ragged.
+  justify,
+}
+
 /// Everything that changes line boxes, in one immutable value.
 ///
 /// The layout hash is derived from this object and nothing else. Any field
@@ -14,6 +26,7 @@ final class LayoutSpec {
     this.horizontalPadding = 20,
     this.verticalPadding = 12,
     this.letterSpacing = 0,
+    this.textAlign = LayoutTextAlign.start,
     this.fontVersion = 1,
     this.flags = Flags.none,
   });
@@ -34,6 +47,9 @@ final class LayoutSpec {
   final double horizontalPadding;
   final double verticalPadding;
   final double letterSpacing;
+
+  /// Line alignment; part of the hash because justify changes line boxes.
+  final LayoutTextAlign textAlign;
 
   /// Bumped whenever the shipped font files change: same name, new metrics.
   final int fontVersion;
@@ -61,6 +77,7 @@ final class LayoutSpec {
     'letterSpacing': letterSpacing,
     'lineHeight': lineHeight,
     'paragraphSpacing': paragraphSpacing,
+    'textAlign': textAlign.name,
     'verticalPadding': verticalPadding,
   });
 
@@ -72,6 +89,7 @@ final class LayoutSpec {
     double? horizontalPadding,
     double? verticalPadding,
     double? letterSpacing,
+    LayoutTextAlign? textAlign,
     int? fontVersion,
     int? flags,
   }) => LayoutSpec(
@@ -82,6 +100,7 @@ final class LayoutSpec {
     horizontalPadding: horizontalPadding ?? this.horizontalPadding,
     verticalPadding: verticalPadding ?? this.verticalPadding,
     letterSpacing: letterSpacing ?? this.letterSpacing,
+    textAlign: textAlign ?? this.textAlign,
     fontVersion: fontVersion ?? this.fontVersion,
     flags: flags ?? this.flags,
   );

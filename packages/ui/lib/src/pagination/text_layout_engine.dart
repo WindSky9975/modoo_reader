@@ -1,6 +1,24 @@
 import 'package:flutter/painting.dart';
 import 'package:modoo_reader_engine/modoo_reader_engine.dart';
 
+/// The style every page of a [LayoutSpec] is measured and drawn with.
+///
+/// Both the paginator and the reader page call this, so a page break can never
+/// disagree with the glyphs the user sees: one source of truth for family,
+/// size, leading and letter spacing.
+TextStyle readerTextStyle(LayoutSpec spec) => TextStyle(
+  fontFamily: spec.fontFamily,
+  fontSize: spec.fontSize,
+  height: spec.lineHeight,
+  letterSpacing: spec.letterSpacing,
+);
+
+/// Maps [LayoutSpec.textAlign] onto the Flutter alignment used for drawing.
+TextAlign readerTextAlign(LayoutSpec spec) => switch (spec.textAlign) {
+  LayoutTextAlign.start => TextAlign.start,
+  LayoutTextAlign.justify => TextAlign.justify,
+};
+
 /// Measures a chapter with `TextPainter` and cuts it into pages.
 ///
 /// Why here and not in `packages/reader`: `TextPainter.layout` needs the UI
@@ -27,17 +45,12 @@ final class TextPainterLayoutEngine implements TextLayoutEngine {
     }
 
     final LayoutSpec spec = request.spec;
-    final TextStyle style = TextStyle(
-      fontFamily: spec.fontFamily,
-      fontSize: spec.fontSize,
-      height: spec.lineHeight,
-      letterSpacing: spec.letterSpacing,
-    );
+    final TextStyle style = readerTextStyle(spec);
 
     final TextPainter painter = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
-      textAlign: TextAlign.left,
+      textAlign: readerTextAlign(spec),
     );
     try {
       painter.layout(maxWidth: request.pageWidth);

@@ -12,6 +12,11 @@
 
 ### Added
 
+- **排版可调（P0）**：排版面板补齐字体（默认 / 衬线 / 等宽，全部走系统已装字体，不打包字体文件，
+  ADR-0007）、段距、页边距、对齐（左对齐 / 两端对齐）四个设置，连同原本的字号、行距一起持久化。
+  - 分页与绘制现在共用 `readerTextStyle` / `readerTextAlign`（`packages/ui`），字体、字号、行高、
+    字距与对齐只有一份来源——以前绘制端写死 `letterSpacing: 0.2` 而测量端用另一份，改设置就可能错位。
+  - `LayoutSpec` 增加 `textAlign` 且计入 `layoutHash`，所以改对齐会按预期重建页表。
 - **Markdown / HTML 导入（P1）**：
   - 两个新插件 `plugins/format_markdown`、`plugins/format_html`。Markdown 的 ATX 标题（`#`/`##`）
     变成章节；HTML 的 `h1`/`h2` 变成章节；两者都拿不到标题时退回中文「第 N 章 / 第 N 节」正则，
