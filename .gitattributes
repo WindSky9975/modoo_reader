@@ -1,0 +1,33 @@
+# 全仓统一 LF；Windows 上的 bat/ps1 允许 CRLF
+* text=auto eol=lf
+
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# 二进制：不要做行尾转换，diff 也不要尝试文本比较
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.zip   binary
+*.epub  binary
+*.cbz   binary
+*.mobi  binary
+*.pdf   binary
+*.db    binary
+*.sqlite binary
+
+# 测试夹具一律视为二进制，避免编辑器改坏
+tests/fixtures/**  -text
+
+# 生成文件在 GitHub 上折叠
+*.g.dart        linguist-generated=true
+*.freezed.dart  linguist-generated=true
+*.arb           linguist-detectable=false

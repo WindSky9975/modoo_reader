@@ -1,0 +1,56 @@
+# ---- Dart / Flutter ----
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.lock.bak
+pubspec.lock.bak
+
+# melos 局部覆盖（含个人路径，别提交）
+melos_*.yaml
+
+# ---- IDE / 工具 ----
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.history/
+*.swp
+
+# ---- 平台构建产物 ----
+android/.gradle/
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+ios/Pods/
+ios/.symlinks/
+macos/Pods/
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
+*.apk
+*.aab
+*.ipa
+*.app
+
+# ---- 测试与调试产物 ----
+coverage/
+test/failures/
+*.log
+doc/api/
+
+# ---- 本机杂项 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 绝不能提交 ----
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
