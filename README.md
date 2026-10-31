@@ -30,6 +30,7 @@
 
 - [开发计划](docs/DEVELOPMENT_PLAN.md) —— 需求矩阵、架构、里程碑、风险登记册
 - [代码规范](docs/CODE_STYLE.md) —— 分层与依赖、命名、Riverpod / Drift / 插件规范、测试与提交规则
+- [GitHub 推送规则](docs/GIT_WORKFLOW.md) —— 分支模型、分支保护、PR 与 squash、tag 与发版、常见 Git 报错处置
 - [AGENTS.md](AGENTS.md) —— 给 AI 编码代理与新贡献者的操作手册（硬规则、任务配方、常见陷阱）
 
 遇到冲突时的优先级：**代码规范 > AGENTS.md > 计划**。

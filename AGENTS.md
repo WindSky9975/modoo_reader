@@ -14,7 +14,7 @@
 | 项 | 状态 |
 | --- | --- |
 | 阶段 | **M0 之前**：只有文档，没有代码 |
-| 已存在 | `docs/DEVELOPMENT_PLAN.md`、`docs/CODE_STYLE.md`、`AGENTS.md` |
+| 已存在 | `docs/DEVELOPMENT_PLAN.md`、`docs/CODE_STYLE.md`、`docs/GIT_WORKFLOW.md`、`AGENTS.md`、`README.md`、`LICENSE` |
 | 未存在 | `apps/`、`packages/`、`plugins/`、`melos.yaml`、`analysis_options.yaml`、CI |
 | 因此 | 提到 `melos run ...` 的命令**现在跑不了**，它们是 M0 建仓后的目标态 |
 
@@ -25,8 +25,9 @@
 1. 本文件（硬规则与配方）
 2. [docs/CODE_STYLE.md](docs/CODE_STYLE.md)（写代码时的判据）
 3. [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) §2 需求矩阵 + §5 里程碑（确认你的任务属于哪一段）
+4. [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)（要 push / 开 PR / 发版时必读）
 
-三者冲突时：**CODE_STYLE > 本文件 > 计划**。计划描述目标，规范描述做法；做法冲突以规范为准。
+冲突时：**CODE_STYLE > 本文件 > GIT_WORKFLOW > 计划**。计划描述目标，规范描述做法；做法冲突以规范为准。
 
 ---
 
@@ -83,6 +84,7 @@
 | 中文文案 | `packages/l10n/lib/l10n/*.arb` |
 | 分层 / 命名 / 测试规则 | `docs/CODE_STYLE.md` |
 | 需求、里程碑、风险 | `docs/DEVELOPMENT_PLAN.md` |
+| 推送、分支、PR、发版、Git 报错 | `docs/GIT_WORKFLOW.md` |
 | 架构决策 | `docs/adr/`（新增时按 `NNNN-title.md`） |
 
 **唯一允许 import `plugins/*` 的文件**：`apps/mobile/lib/src/plugins/registry.dart`。这个文件由脚本生成，不要手改。
@@ -262,6 +264,7 @@ pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生�
 | 新增依赖 | `THIRD_PARTY.md` + PR 说明四问 |
 | 用户可见行为变化 | `CHANGELOG.md` |
 | 新的命令/脚本 | 本文件 §3.2 + `melos.yaml` |
+| 分支模型 / 推送 / 发版流程变化 | `GIT_WORKFLOW.md` + 仓库 Settings 同步调整 |
 
 ## 11. 何时停下来提问
 
@@ -304,3 +307,4 @@ pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生�
 | --- | --- | --- |
 | v1.0 | 2026-10-31 | 首版：阶段说明、命令、代码地图、10 条硬规则、7 个任务配方、陷阱与 DoD |
 | v1.1 | 2026-10-31 | 与 CODE_STYLE v1.1 对齐：新建插件改 `dart run tool/new_plugin.dart`、注册表改 `buildPluginRegistry()` + `melos run gen-registry`、硬规则 1 限定 `core ← 所有业务包`、自检命令改 `melos run check` / `tool/check.ps1`、补 lint 唯一豁免说明 |
+| v1.2 | 2026-10-31 | 新增 `docs/GIT_WORKFLOW.md`（推送、分支、PR、发版）；必读顺序与冲突优先级加入该文档；代码地图与文档同步矩阵补行 |

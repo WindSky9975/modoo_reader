@@ -262,6 +262,7 @@ modoo_reader/
 ├─ docs/
 │  ├─ DEVELOPMENT_PLAN.md     # 本文档
 │  ├─ CODE_STYLE.md           # 代码规范（M0 起强制）
+│  ├─ GIT_WORKFLOW.md         # GitHub 推送、PR、发版规则
 │  ├─ adr/                    # 架构决策记录
 │  └─ plugin-sdk/             # 插件开发指南
 ├─ tool/                      # 代码生成、插件脚手架、规则校验
@@ -905,6 +906,7 @@ CBZ 漫画 → PDF 只读 → MOBI 技术验证（允许失败）→ 仿真翻�
 ### 7.2 协作规范
 
 - **分支模型**：trunk-based。`main` 常绿，功能分支 ≤ 3 天，PR 小步合并。
+- **推送与合并的执行细节**（分支保护、squash、tag、冲突与回滚）见 [GIT_WORKFLOW.md](GIT_WORKFLOW.md)。
 - **提交规范**：Conventional Commits（`feat:` / `fix:` / `docs:` / `refactor:` / `perf:` / `chore:`），由 commitlint 校验。
 - **PR 要求**：CI 绿 + 至少 1 次 review。单人阶段用「自查清单 + CI」替代 review，但**不绕过 CI**。
 - **架构变更**：必须提 ADR，PR 里链接 ADR 编号。
@@ -1019,3 +1021,4 @@ CBZ 漫画 → PDF 只读 → MOBI 技术验证（允许失败）→ 仿真翻�
 | --- | --- | --- |
 | v0.1 | 2026-10-31 | 首版：基于两轮需求访谈（产品 9 问 + 技术 9 问）成稿 |
 | v0.2 | 2026-10-31 | 三文档一致性评审修正：分页限定在 UI isolate（`TextPainter` 字体环境）、layoutHash 补全字段（段距/排版开关/字体版本）、依赖表补 `core ← 所有业务包` 与 `source_engine`、注册表统一 `buildPluginRegistry()` + `melos run gen-registry`、覆盖率口径改 `plugins/format_*`、P2 归入 M6；§0.3 的 4 条决策经确认；补 ADR-0009/0010 |
+| v0.3 | 2026-10-31 | 新增 `docs/GIT_WORKFLOW.md`（分支、推送、分支保护、PR、tag 发版、Git 报错处置）；§3.3 目录树与 §7.2 协作规范补引用与执行细则 |

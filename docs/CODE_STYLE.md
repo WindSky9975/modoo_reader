@@ -714,6 +714,8 @@ await prefetch(chapters[i + 1]);
 
 ## 14. 提交与评审
 
+> 本节定义规则；GitHub 侧的落地操作（分支保护设置、推送禁令、tag 与发版、冲突与报错处置）见 [GIT_WORKFLOW.md](GIT_WORKFLOW.md)。
+
 ### 14.1 提交信息
 
 Conventional Commits，英文，祈使句，首行 ≤ 72 字符：
@@ -971,3 +973,4 @@ logger.debug('chapter loaded', fields: {'bookId': book.id, 'chapter': idx, 'char
 | --- | --- | --- |
 | v1.0 | 2026-10-31 | 首版：分层规则、命名、Dart/Flutter 约定、Riverpod/Drift/插件规范、测试与提交规范 |
 | v1.1 | 2026-10-31 | 评审修正：§3.5 改为「一包一个公共出口」（原「禁止 barrel」+「只许 `lib/src/`」无法共存）；§7.3 标注 `ref.mounted` 需 Riverpod 3.x；§10.1 明确分页不得进后台 isolate；§5.1 局部变量统一 `final`；§9.2 补插件文案归属；§9.3/§10.2 补协作取消；§12.3 覆盖率口径改 `plugins/format_*` |
+| v1.2 | 2026-10-31 | §14 增指向 `docs/GIT_WORKFLOW.md` 的说明（本节定义规则，该文档负责 GitHub 侧落地） |
