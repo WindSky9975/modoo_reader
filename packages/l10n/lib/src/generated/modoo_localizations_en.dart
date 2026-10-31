@@ -125,6 +125,9 @@ class ModooLocalizationsEn extends ModooLocalizations {
   String get pageTurnNone => 'None';
 
   @override
+  String get pageTurnCover => 'Cover';
+
+  @override
   String get previousChapter => 'Previous';
 
   @override

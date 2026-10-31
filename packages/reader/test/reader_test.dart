@@ -132,4 +132,24 @@ void main() {
       expect(hits.single.snippet, isNot(contains('\n')));
     });
   });
+
+  group('pinchFontSize', () {
+    test('spreading the fingers grows the text', () {
+      expect(pinchFontSize(startSize: 18, startSpan: 100, span: 200), 30);
+    });
+
+    test('pinching in shrinks the text and stops at the floor', () {
+      expect(pinchFontSize(startSize: 18, startSpan: 100, span: 50), 14);
+    });
+
+    test('rounds to whole points to avoid re-paginating every frame', () {
+      expect(pinchFontSize(startSize: 18, startSpan: 100, span: 110), 20);
+      expect(pinchFontSize(startSize: 18, startSpan: 100, span: 101), 18);
+    });
+
+    test('stays at the start size for a degenerate span', () {
+      expect(pinchFontSize(startSize: 18, startSpan: 0, span: 120), 18);
+      expect(pinchFontSize(startSize: 18, startSpan: 100, span: 0), 18);
+    });
+  });
 }

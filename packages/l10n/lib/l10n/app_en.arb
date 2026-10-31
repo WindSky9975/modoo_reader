@@ -60,6 +60,7 @@
   "listen": "Listen",
   "listenComingSoon": "Text to speech arrives with the plugin SDK (M4)",
   "pageTurnNone": "None",
+  "pageTurnCover": "Cover",
   "previousChapter": "Previous",
   "nextChapter": "Next",
   "endOfChapter": "End of the book",

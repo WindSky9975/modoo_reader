@@ -162,6 +162,10 @@
   "@pageTurnNone": {
     "description": "Page turn mode: jump straight to the next page."
   },
+  "pageTurnCover": "覆盖",
+  "@pageTurnCover": {
+    "description": "Page turn mode: the new page is uncovered from underneath."
+  },
   "previousChapter": "上一章",
   "@previousChapter": {
     "description": "Jump to the previous chapter."

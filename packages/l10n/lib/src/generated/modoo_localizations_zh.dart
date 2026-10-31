@@ -125,6 +125,9 @@ class ModooLocalizationsZh extends ModooLocalizations {
   String get pageTurnNone => '无动画';
 
   @override
+  String get pageTurnCover => '覆盖';
+
+  @override
   String get previousChapter => '上一章';
 
   @override

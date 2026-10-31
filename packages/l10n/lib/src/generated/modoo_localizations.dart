@@ -310,6 +310,12 @@ abstract class ModooLocalizations {
   /// **'无动画'**
   String get pageTurnNone;
 
+  /// Page turn mode: the new page is uncovered from underneath.
+  ///
+  /// In zh, this message translates to:
+  /// **'覆盖'**
+  String get pageTurnCover;
+
   /// Jump to the previous chapter.
   ///
   /// In zh, this message translates to:

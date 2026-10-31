@@ -34,7 +34,7 @@ class ReaderPage extends ConsumerStatefulWidget {
   ConsumerState<ReaderPage> createState() => _ReaderPageState();
 }
 
-class _ReaderPageState extends ConsumerState<ReaderPage> {
+class _ReaderPageState extends ConsumerState<ReaderPage> with SingleTickerProviderStateMixin {
   static const double _verticalPadding = 20;
 
   /// Hair of tracking keeps CJK punctuation from touching the next glyph.
@@ -72,6 +72,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   Offset? _tapOrigin;
   static const double _tapSlop = 8;
 
+  /// Live pointers, so a two-finger pinch can resize the text.
+  ///
+  /// Tracked at the pointer level rather than through `GestureDetector`:
+  /// `PageView` and `SelectionArea` already compete in the gesture arena, and a
+  /// pinch recognizer would lose to the horizontal drag.
+  final Map<int, Offset> _pointers = <int, Offset>{};
+  double? _pinchStartSpan;
+  double? _pinchStartFontSize;
+
   /// Time spent in this book, flushed to a reading session on [dispose].
   late final ReadingSessionRecorder _session;
 
@@ -106,6 +115,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     _prefetchTimer?.cancel();
     _saveProgress();
     unawaited(_session.flush(DateTime.now()));
+    _coverSnap?.dispose();
+    _coverOffset.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -384,7 +395,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
     final int target = _pageIndex + delta;
     if (target < 0 || target >= _pages.length) return;
-    final bool animated = ref.read(readerSettingsControllerProvider).pageTurnId == 'slide';
+    final String turn = ref.read(readerSettingsControllerProvider).pageTurnId;
+    if (turn == 'cover') {
+      // Cover mode has no PageView scrolling of its own, so a tap runs the same
+      // slide-out the drag would have produced.
+      _coverPreview = delta;
+      setState(() {});
+      _snapCover(delta > 0 ? -_lastWidth : _lastWidth, onDone: () => _commitCoverPage(target));
+      return;
+    }
+    final bool animated = turn == 'slide';
     if (animated) {
       unawaited(
         _pageController.animateToPage(
@@ -396,6 +416,217 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     } else {
       _pageController.jumpToPage(target);
     }
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
+    _pointers[event.pointer] = event.position;
+    if (_pointers.length == 2) {
+      _pinchStartSpan = _currentSpan();
+      _pinchStartFontSize = ref.read(readerSettingsControllerProvider).fontSize;
+    } else if (_pointers.length > 2) {
+      // Three fingers is a palm or a slip; stop treating it as a pinch.
+      _pinchStartSpan = null;
+      _pinchStartFontSize = null;
+    }
+  }
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    if (!_pointers.containsKey(event.pointer)) return;
+    _pointers[event.pointer] = event.position;
+    final double? startSpan = _pinchStartSpan;
+    final double? startSize = _pinchStartFontSize;
+    if (startSpan == null || startSize == null || _pointers.length != 2) return;
+    final double size = pinchFontSize(
+      startSize: startSize,
+      startSpan: startSpan,
+      span: _currentSpan(),
+    );
+    if (size == ref.read(readerSettingsControllerProvider).fontSize) return;
+    // Rounding inside pinchFontSize keeps this to at most one re-pagination per
+    // whole point size, which is what the slider does too.
+    ref.read(readerSettingsControllerProvider.notifier).setFontSize(size);
+  }
+
+  void _handlePointerEnd(int pointer) {
+    _pointers.remove(pointer);
+    if (_pointers.length < 2) {
+      _pinchStartSpan = null;
+      _pinchStartFontSize = null;
+    }
+  }
+
+  /// Distance between the first two live pointers, or 0 when there are fewer.
+  double _currentSpan() {
+    if (_pointers.length < 2) return 0;
+    final List<Offset> positions = _pointers.values.take(2).toList(growable: false);
+    return (positions[0] - positions[1]).distance;
+  }
+
+  /// How far the current page has slid aside in cover mode, in pixels.
+  ///
+  /// A notifier rather than state: a drag updates it every frame and only the
+  /// transform above the page should rebuild, not the text itself.
+  final ValueNotifier<double> _coverOffset = ValueNotifier<double>(0);
+
+  /// Page previewed under the one being dragged: +1 for the next, -1 previous.
+  int _coverPreview = 0;
+
+  /// Content width of the last layout pass, needed when a tap animates a turn.
+  double _lastWidth = 0;
+
+  /// Tweens [_coverOffset] so a released drag settles instead of snapping.
+  AnimationController? _coverSnap;
+  VoidCallback? _snapListener;
+
+  int _coverNeighbourIndex() {
+    if (_coverPreview == 0) return _pageIndex;
+    return (_pageIndex + _coverPreview).clamp(0, math.max(0, _pages.length - 1));
+  }
+
+  void _startCoverDrag() {
+    _coverSnap?.stop();
+  }
+
+  void _updateCoverDrag(double delta, double width) {
+    final double next = (_coverOffset.value + delta).clamp(-width, width);
+    _coverOffset.value = next;
+    final int preview = next == 0 ? 0 : (next < 0 ? 1 : -1);
+    if (preview != _coverPreview) {
+      setState(() => _coverPreview = preview);
+    }
+  }
+
+  void _endCoverDrag(double velocity, double width) {
+    final double offset = _coverOffset.value;
+    final int preview = _coverPreview;
+    final bool commit = offset.abs() > width * 0.25 || velocity.abs() > 700;
+    if (!commit || preview == 0) {
+      _snapCover(0);
+      return;
+    }
+    final int target = _pageIndex + preview;
+    if (target < 0 || target >= _pages.length) {
+      // The page list ends at the chapter boundary, so finish the gesture and
+      // let the normal chapter switch take over instead of dragging in a blank.
+      _snapCover(0, onDone: () => _flip(preview));
+      return;
+    }
+    _snapCover(preview > 0 ? -width : width, onDone: () => _commitCoverPage(target));
+  }
+
+  /// Jumps to [target] and keeps the page counter in step.
+  ///
+  /// `jumpToPage` alone can leave `onPageChanged` unfired in cover mode, which
+  /// would leave the indicator and the saved offset one page behind.
+  void _commitCoverPage(int target) {
+    _pageController.jumpToPage(target);
+    _coverOffset.value = 0;
+    setState(() => _coverPreview = 0);
+    if (_pageIndex != target) _onPageChanged(target);
+  }
+
+  /// Animates the cover offset to [target], then runs [onDone].
+  void _snapCover(double target, {VoidCallback? onDone}) {
+    final AnimationController controller = _ensureCoverSnap();
+    controller.stop();
+    final double from = _coverOffset.value;
+    final VoidCallback? previous = _snapListener;
+    if (previous != null) controller.removeListener(previous);
+    void tick() {
+      _coverOffset.value = from + (target - from) * Curves.easeOutCubic.transform(controller.value);
+    }
+
+    _snapListener = tick;
+    controller.addListener(tick);
+    unawaited(
+      controller.forward(from: 0).whenComplete(() {
+        controller.removeListener(tick);
+        _snapListener = null;
+        if (!mounted) return;
+        _coverOffset.value = target;
+        if (target == 0 && _coverPreview != 0) {
+          setState(() => _coverPreview = 0);
+        }
+        onDone?.call();
+      }),
+    );
+  }
+
+  AnimationController _ensureCoverSnap() {
+    return _coverSnap ??= AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 180),
+    );
+  }
+
+  /// Body of one page: the shared style, selection, and (optionally) taps.
+  Widget _pageContent({
+    required BuildContext context,
+    required int index,
+    required String text,
+    required int start,
+    required int end,
+    required LayoutSpec spec,
+    required double horizontalPadding,
+    required BoxConstraints constraints,
+    required bool interactive,
+  }) {
+    final PageSpan page = _pages[index];
+    final int from = (start + page.startOffset).clamp(0, end);
+    final int to = (start + page.endOffset).clamp(from, end);
+    // `SelectionArea` inside competes for taps in the gesture arena, so taps are
+    // read at the pointer level and anything past [_tapSlop] is treated as a
+    // swipe.
+    // Opaque: in cover mode this page slides across the one underneath, and a
+    // transparent sheet would show both texts at once.
+    final Widget body = ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Padding(
+        // Keep the first line below the status bar even though the chrome is
+        // hidden: the page box is measured with the same insets, so the layout
+        // and the drawing agree.
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          math.max(_verticalPadding, MediaQuery.paddingOf(context).top + 8),
+          horizontalPadding,
+          math.max(_verticalPadding, MediaQuery.paddingOf(context).bottom + 8),
+        ),
+        child: SizedBox.expand(
+          // Long-press selects text and the platform menu offers copy; taps
+          // still reach the Listener above.
+          child: SelectionArea(
+            child: Text(
+              text.substring(from, to).trim(),
+              // Same style and alignment the paginator measured with, otherwise
+              // page breaks drift from the glyphs.
+              style: readerTextStyle(spec),
+              textAlign: readerTextAlign(spec),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (!interactive) return body;
+    return Listener(
+      onPointerDown: (PointerDownEvent event) => _tapOrigin = event.localPosition,
+      onPointerUp: (PointerUpEvent event) {
+        final Offset? origin = _tapOrigin;
+        _tapOrigin = null;
+        if (origin == null) return;
+        if ((event.localPosition - origin).distance > _tapSlop) return;
+        final double x = event.localPosition.dx;
+        if (x < constraints.maxWidth * 0.3) {
+          _flip(-1);
+        } else if (x > constraints.maxWidth * 0.7) {
+          _flip(1);
+        } else {
+          // Middle tap toggles the immersive chrome, like the reference reader.
+          _toggleChrome();
+        }
+      },
+      onPointerCancel: (PointerCancelEvent event) => _tapOrigin = null,
+      child: body,
+    );
   }
 
   String _excerptOf(String pageText) {
@@ -954,6 +1185,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final double horizontalPadding = settings.horizontalPadding;
+        _lastWidth = constraints.maxWidth;
         final double width = math.max(80, constraints.maxWidth - horizontalPadding * 2);
         final EdgeInsets insets = MediaQuery.paddingOf(context);
         final double topInset = math.max(_verticalPadding, insets.top + 8);
@@ -1006,67 +1238,82 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           return const Center(child: CircularProgressIndicator());
         }
         final Axis axis = _axisFor(settings.pageTurnId);
+        final bool cover = settings.pageTurnId == 'cover';
+        final Widget pager = PageView.builder(
+          key: ValueKey<String>(settings.pageTurnId),
+          scrollDirection: axis,
+          physics: cover ? const NeverScrollableScrollPhysics() : null,
+          controller: _pageController,
+          itemCount: _pages.length,
+          onPageChanged: _onPageChanged,
+          itemBuilder: (BuildContext context, int index) => _pageContent(
+            context: context,
+            index: index,
+            text: text,
+            start: start,
+            end: end,
+            spec: spec,
+            horizontalPadding: horizontalPadding,
+            constraints: constraints,
+            interactive: true,
+          ),
+        );
+
+        final Widget paged = Listener(
+          // Pinch is observed above the PageView: when two fingers land on
+          // different pages the per-page listeners would only see one each.
+          onPointerDown: _handlePointerDown,
+          onPointerMove: _handlePointerMove,
+          onPointerUp: (PointerUpEvent event) => _handlePointerEnd(event.pointer),
+          onPointerCancel: (PointerCancelEvent event) => _handlePointerEnd(event.pointer),
+          child: cover
+              ? ValueListenableBuilder<double>(
+                  valueListenable: _coverOffset,
+                  builder: (BuildContext context, double offset, Widget? child) =>
+                      Transform.translate(offset: Offset(offset, 0), child: child),
+                  child: pager,
+                )
+              : pager,
+        );
+
         return Stack(
           children: <Widget>[
-            PageView.builder(
-              key: ValueKey<Axis>(axis),
-              scrollDirection: axis,
-              controller: _pageController,
-              itemCount: _pages.length,
-              onPageChanged: _onPageChanged,
-              itemBuilder: (BuildContext context, int index) {
-                final PageSpan page = _pages[index];
-                final int from = (start + page.startOffset).clamp(0, end);
-                final int to = (start + page.endOffset).clamp(from, end);
-                // `SelectionArea` inside competes for taps in the gesture
-                // arena, so taps are read at the pointer level and anything
-                // that moves more than [_tapSlop] is treated as a swipe.
-                return Listener(
-                  onPointerDown: (PointerDownEvent event) => _tapOrigin = event.localPosition,
-                  onPointerUp: (PointerUpEvent event) {
-                    final Offset? origin = _tapOrigin;
-                    _tapOrigin = null;
-                    if (origin == null) return;
-                    if ((event.localPosition - origin).distance > _tapSlop) return;
-                    final double x = event.localPosition.dx;
-                    if (x < constraints.maxWidth * 0.3) {
-                      _flip(-1);
-                    } else if (x > constraints.maxWidth * 0.7) {
-                      _flip(1);
-                    } else {
-                      // Middle tap toggles the immersive chrome, like the
-                      // reference reader does.
-                      _toggleChrome();
-                    }
+            if (cover)
+              // The page being uncovered: it sits still while the current one
+              // slides away, which is what makes the effect read as a card
+              // being pulled off the stack instead of two pages swapping.
+              IgnorePointer(
+                child: ValueListenableBuilder<double>(
+                  valueListenable: _coverOffset,
+                  builder: (BuildContext context, double offset, Widget? child) {
+                    if (offset == 0) return const SizedBox.shrink();
+                    return child!;
                   },
-                  onPointerCancel: (PointerCancelEvent event) => _tapOrigin = null,
-                  child: Padding(
-                    // Keep the first line below the status bar even though the
-                    // chrome is hidden: the page box is measured with the same
-                    // insets, so the layout and the drawing agree.
-                    padding: EdgeInsets.fromLTRB(
-                      horizontalPadding,
-                      math.max(_verticalPadding, MediaQuery.paddingOf(context).top + 8),
-                      horizontalPadding,
-                      math.max(_verticalPadding, MediaQuery.paddingOf(context).bottom + 8),
-                    ),
-                    child: SizedBox.expand(
-                      // Long-press selects text and the platform context menu
-                      // offers copy; taps still reach the Listener above.
-                      child: SelectionArea(
-                        child: Text(
-                          text.substring(from, to).trim(),
-                          // Same style and alignment the paginator measured
-                          // with, otherwise page breaks drift from the glyphs.
-                          style: readerTextStyle(spec),
-                          textAlign: readerTextAlign(spec),
-                        ),
-                      ),
-                    ),
+                  child: _pageContent(
+                    context: context,
+                    index: _coverNeighbourIndex(),
+                    text: text,
+                    start: start,
+                    end: end,
+                    spec: spec,
+                    horizontalPadding: horizontalPadding,
+                    constraints: constraints,
+                    interactive: false,
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+            if (cover)
+              GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onHorizontalDragStart: (DragStartDetails details) => _startCoverDrag(),
+                onHorizontalDragUpdate: (DragUpdateDetails details) =>
+                    _updateCoverDrag(details.primaryDelta ?? 0, constraints.maxWidth),
+                onHorizontalDragEnd: (DragEndDetails details) =>
+                    _endCoverDrag(details.primaryVelocity ?? 0, constraints.maxWidth),
+                child: paged,
+              )
+            else
+              paged,
             // Hidden while the chrome is up: the bottom bar covers this corner.
             IgnorePointer(
               child: AnimatedOpacity(
@@ -1314,6 +1561,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                         ButtonSegment<String>(
                           value: 'slide',
                           label: Text(context.l10n.pageTurnHorizontal),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'cover',
+                          label: Text(context.l10n.pageTurnCover),
                         ),
                         ButtonSegment<String>(
                           value: 'none',
