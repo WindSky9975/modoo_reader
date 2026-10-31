@@ -77,3 +77,46 @@ class ProgressRows extends Table {
   @override
   Set<Column<Object>> get primaryKey => <Column<Object>>{bookId, deviceId};
 }
+
+/// Cached pagination results (schema v2).
+///
+/// Pure cache: every row can be rebuilt from the chapter text plus
+/// [layoutHash], so dropping rows is always safe. Offsets are character
+/// offsets into the chapter body, never pixels.
+@DataClassName('PageLayoutRow')
+class PageLayouts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  IntColumn get bookId => integer().references(Books, #id)();
+
+  IntColumn get chapterIndex => integer()();
+
+  /// FNV-1a hash of the `LayoutSpec` the pages were measured with.
+  IntColumn get layoutHash => integer()();
+
+  IntColumn get pageCount => integer().withDefault(const Constant(0))();
+
+  /// JSON array of `[startOffset, endOffset]` pairs, one per page.
+  TextColumn get spans => text()();
+
+  DateTimeColumn get computedAt => dateTime()();
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => <Set<Column<Object>>>[
+    <Column<Object>>{bookId, chapterIndex, layoutHash},
+  ];
+}
+
+/// Key/value store for app preferences (schema v2).
+///
+/// Values are JSON so a new preference never needs a schema change; the keys
+/// are owned by the repository that reads them.
+@DataClassName('SettingRow')
+class AppSettings extends Table {
+  TextColumn get key => text()();
+
+  TextColumn get value => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{key};
+}

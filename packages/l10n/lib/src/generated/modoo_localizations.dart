@@ -214,6 +214,24 @@ abstract class ModooLocalizations {
   /// **'行距'**
   String get readerLineHeight;
 
+  /// Label of the page turn mode selector.
+  ///
+  /// In zh, this message translates to:
+  /// **'翻页'**
+  String get readerPageTurn;
+
+  /// Page turn mode: animated horizontal slide.
+  ///
+  /// In zh, this message translates to:
+  /// **'滑动'**
+  String get pageTurnSlide;
+
+  /// Page turn mode: jump straight to the next page.
+  ///
+  /// In zh, this message translates to:
+  /// **'无动画'**
+  String get pageTurnNone;
+
   /// Jump to the previous chapter.
   ///
   /// In zh, this message translates to:

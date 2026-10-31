@@ -77,6 +77,15 @@ class ModooLocalizationsEn extends ModooLocalizations {
   String get readerLineHeight => 'Line height';
 
   @override
+  String get readerPageTurn => 'Page turn';
+
+  @override
+  String get pageTurnSlide => 'Slide';
+
+  @override
+  String get pageTurnNone => 'None';
+
+  @override
   String get previousChapter => 'Previous';
 
   @override

@@ -44,3 +44,23 @@ final class PaginationRequest {
 abstract interface class TextLayoutEngine {
   Future<List<PageSpan>> paginate(PaginationRequest request);
 }
+
+/// Index of the page that contains [charOffset].
+///
+/// Offsets are the only position that survives a font-size change, so the
+/// reader restores by offset and then asks this function which page to show
+/// (DEVELOPMENT_PLAN §3.5.4). Returns 0 for an empty page list and clamps to
+/// the last page when the offset is past the end.
+int pageIndexForOffset(List<PageSpan> pages, int charOffset) {
+  if (pages.isEmpty) return 0;
+  for (int i = 0; i < pages.length; i++) {
+    if (charOffset < pages[i].endOffset) return i;
+  }
+  return pages.length - 1;
+}
+
+/// The page that contains [charOffset], or `null` when there are no pages.
+PageSpan? pageForOffset(List<PageSpan> pages, int charOffset) {
+  if (pages.isEmpty) return null;
+  return pages[pageIndexForOffset(pages, charOffset)];
+}

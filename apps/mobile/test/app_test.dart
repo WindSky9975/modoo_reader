@@ -19,6 +19,8 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           pluginRegistryProvider.overrideWithValue(registry),
+          initialReaderSettingsProvider.overrideWithValue(ReaderSettings.defaults),
+          settingsRepositoryProvider.overrideWithValue(DriftSettingsRepository(database)),
         ],
         child: const ModooApp(),
       ),
@@ -58,6 +60,8 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           pluginRegistryProvider.overrideWithValue(registry),
+          initialReaderSettingsProvider.overrideWithValue(ReaderSettings.defaults),
+          settingsRepositoryProvider.overrideWithValue(DriftSettingsRepository(database)),
         ],
         child: const ModooApp(),
       ),

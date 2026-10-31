@@ -5,14 +5,14 @@ import 'package:modoo_ui/modoo_ui.dart';
 
 import '../../providers/app_providers.dart';
 
-/// Settings shell. Only the theme selector exists in M0.
+/// App-wide settings: reading theme today, typography and sync later.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final current = ref.watch(themeControllerProvider);
-    final controller = ref.read(themeControllerProvider.notifier);
+    final AppThemeVariant current = ref.watch(appThemeProvider);
+    final ReaderSettingsController controller = ref.read(readerSettingsControllerProvider.notifier);
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.settingsTitle)),
       body: ListView(
@@ -22,12 +22,12 @@ class SettingsPage extends ConsumerWidget {
             groupValue: current,
             onChanged: (AppThemeVariant? value) {
               if (value != null) {
-                controller.select(value);
+                controller.setThemeId(value.name);
               }
             },
             child: Column(
               children: <Widget>[
-                for (final variant in AppThemeVariant.values)
+                for (final AppThemeVariant variant in AppThemeVariant.values)
                   RadioListTile<AppThemeVariant>(
                     value: variant,
                     title: Text(_label(context, variant)),

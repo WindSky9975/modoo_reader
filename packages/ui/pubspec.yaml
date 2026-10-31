@@ -1,4 +1,4 @@
-﻿name: modoo_ui
+name: modoo_ui
 description: "Design tokens, themes and shared widgets."
 version: 0.1.0
 publish_to: none
@@ -11,6 +11,10 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  # Pagination contract (PageSpan / LayoutSpec); the measuring engine has to
+  # live here because it needs TextPainter.
+  modoo_reader_engine:
+    path: ../reader
 
 dev_dependencies:
   flutter_lints: ^6.0.0

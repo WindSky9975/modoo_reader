@@ -77,6 +77,15 @@ class ModooLocalizationsZh extends ModooLocalizations {
   String get readerLineHeight => '行距';
 
   @override
+  String get readerPageTurn => '翻页';
+
+  @override
+  String get pageTurnSlide => '滑动';
+
+  @override
+  String get pageTurnNone => '无动画';
+
+  @override
   String get previousChapter => '上一章';
 
   @override

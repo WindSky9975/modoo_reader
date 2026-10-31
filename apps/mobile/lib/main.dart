@@ -27,12 +27,18 @@ Future<void> main() async {
   final registry = PluginRegistry(plugins: buildPluginList(), logger: logger);
   await registry.initialize();
 
+  // Read once so the first frame already paints the saved theme and reader
+  // does not reflow on open (a late reflow would drop the restored page).
+  final settings = await DriftSettingsRepository(database).read();
+
   runApp(
     ProviderScope(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
         pluginRegistryProvider.overrideWithValue(registry),
         libraryDirectoryProvider.overrideWithValue(libraryDir),
+        initialReaderSettingsProvider.overrideWithValue(settings),
+        settingsRepositoryProvider.overrideWithValue(DriftSettingsRepository(database)),
       ],
       child: const ModooApp(),
     ),

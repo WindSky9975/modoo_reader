@@ -1,5 +1,7 @@
 import 'book.dart';
 import 'chapter.dart';
+import 'page_layout.dart';
+import 'reader_settings.dart';
 import 'reading_progress.dart';
 
 /// Read/write contract for the shelf.
@@ -37,4 +39,30 @@ abstract interface class ProgressRepository {
 
   /// Upserts and bumps [ReadingProgress.revision].
   Future<void> save(ReadingProgress progress);
+}
+
+/// Cache of pagination results, keyed by `(bookId, chapterIndex, layoutHash)`.
+///
+/// Every method must tolerate a cold cache: a miss is never an error.
+abstract interface class PageLayoutRepository {
+  Future<CachedPageLayout?> read({
+    required int bookId,
+    required int chapterIndex,
+    required int layoutHash,
+  });
+
+  Future<void> write(CachedPageLayout layout);
+
+  /// Called when a book is removed or re-imported: offsets may have changed.
+  Future<void> deleteForBook(int bookId);
+
+  /// Drops rows older than [before] so the cache cannot grow forever.
+  Future<int> deleteOlderThan(DateTime before);
+}
+
+/// Persisted reader preferences (font size, line height, theme, page turn).
+abstract interface class SettingsRepository {
+  Future<ReaderSettings> read();
+
+  Future<void> save(ReaderSettings settings);
 }

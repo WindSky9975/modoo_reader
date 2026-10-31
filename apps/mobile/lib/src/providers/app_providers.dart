@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -5,6 +6,7 @@ import 'package:modoo_core/modoo_core.dart';
 import 'package:modoo_data/modoo_data.dart';
 import 'package:modoo_domain/modoo_domain.dart';
 import 'package:modoo_plugin_host/modoo_plugin_host.dart';
+import 'package:modoo_reader_engine/modoo_reader_engine.dart';
 import 'package:modoo_ui/modoo_ui.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -22,6 +24,13 @@ PluginRegistry pluginRegistry(Ref ref) => throw UnimplementedError('override in 
 @Riverpod(keepAlive: true)
 Directory libraryDirectory(Ref ref) => throw UnimplementedError('override in main()');
 
+/// Reader preferences as they were when the app started.
+///
+/// Loaded in `main` so the first frame already uses the saved theme instead of
+/// flashing the default one, then overridden there.
+@Riverpod(keepAlive: true)
+ReaderSettings initialReaderSettings(Ref ref) => throw UnimplementedError('override in main()');
+
 /// Single entry point to the shelf.
 @Riverpod(keepAlive: true)
 BookRepository bookRepository(Ref ref) => DriftBookRepository(ref.watch(appDatabaseProvider));
@@ -35,6 +44,24 @@ ChapterRepository chapterRepository(Ref ref) =>
 @Riverpod(keepAlive: true)
 ProgressRepository progressRepository(Ref ref) =>
     DriftProgressRepository(ref.watch(appDatabaseProvider));
+
+/// Persisted reader preferences.
+@Riverpod(keepAlive: true)
+SettingsRepository settingsRepository(Ref ref) =>
+    DriftSettingsRepository(ref.watch(appDatabaseProvider));
+
+/// Pagination cache; a miss only costs one re-layout.
+@Riverpod(keepAlive: true)
+PageLayoutRepository pageLayoutRepository(Ref ref) =>
+    DriftPageLayoutRepository(ref.watch(appDatabaseProvider));
+
+/// Measured with `TextPainter`, so it has to run on the UI isolate.
+@Riverpod(keepAlive: true)
+TextLayoutEngine textLayoutEngine(Ref ref) => const TextPainterLayoutEngine();
+
+/// Diagnostics channel; overridden in tests that want silence.
+@Riverpod(keepAlive: true)
+ModooLogger logger(Ref ref) => const DeveloperLogger();
 
 /// Books on the shelf, live from the database.
 @riverpod
@@ -71,11 +98,35 @@ Future<String> bookText(Ref ref, int bookId) async {
 @Riverpod(keepAlive: true)
 String deviceId(Ref ref) => 'device-${Platform.localHostname}';
 
-/// Reading theme; persisted in M1 follow-up.
+/// Reader typography, persisted on every change.
+///
+/// Writes are fire-and-forget: a lost preference is a nuisance, a slider that
+/// waits for SQLite is worse.
 @Riverpod(keepAlive: true)
-class ThemeController extends _$ThemeController {
+class ReaderSettingsController extends _$ReaderSettingsController {
   @override
-  AppThemeVariant build() => AppThemeVariant.paper;
+  ReaderSettings build() => ref.watch(initialReaderSettingsProvider);
 
-  void select(AppThemeVariant variant) => state = variant;
+  void setFontSize(double value) => _update(state.copyWith(fontSize: value));
+
+  void setLineHeight(double value) => _update(state.copyWith(lineHeight: value));
+
+  void setThemeId(String themeId) => _update(state.copyWith(themeId: themeId));
+
+  void setPageTurnId(String pageTurnId) => _update(state.copyWith(pageTurnId: pageTurnId));
+
+  void _update(ReaderSettings next) {
+    state = next.normalized();
+    unawaited(ref.read(settingsRepositoryProvider).save(state).catchError((Object _) {}));
+  }
+}
+
+/// Reading theme derived from the persisted settings.
+@Riverpod(keepAlive: true)
+AppThemeVariant appTheme(Ref ref) {
+  final String id = ref.watch(readerSettingsControllerProvider).themeId;
+  for (final AppThemeVariant variant in AppThemeVariant.values) {
+    if (variant.name == id) return variant;
+  }
+  return AppThemeVariant.paper;
 }

@@ -17,13 +17,16 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('schema v1 creates the three tables', () async {
-    expect(db.schemaVersion, 1);
+  test('schema v2 creates the five tables', () async {
+    expect(db.schemaVersion, 2);
     final names = await db
         .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
         .map((row) => row.read<String>('name'))
         .get();
-    expect(names, containsAll(<String>['books', 'chapters', 'progress_rows']));
+    expect(
+      names,
+      containsAll(<String>['books', 'chapters', 'progress_rows', 'page_layouts', 'app_settings']),
+    );
   });
 
   test('inserts a book and reads it back through the entity', () async {
@@ -119,13 +122,112 @@ void main() {
     expect(stored.charOffset, 120);
     expect(stored.revision, 2);
   });
+
+  test('page layouts are cached per layout hash', () async {
+    final layouts = DriftPageLayoutRepository(db);
+    final bookId = await books.insert(_book());
+    final layout = CachedPageLayout(
+      bookId: bookId,
+      chapterIndex: 0,
+      layoutHash: 12345,
+      pages: const <PageExtent>[
+        PageExtent(startOffset: 0, endOffset: 100),
+        PageExtent(startOffset: 100, endOffset: 260),
+      ],
+      computedAt: DateTime.utc(2026, 10, 31),
+    );
+
+    await layouts.write(layout);
+    final hit = await layouts.read(bookId: bookId, chapterIndex: 0, layoutHash: 12345);
+    expect(hit, isNotNull);
+    expect(hit!.pages, hasLength(2));
+    expect(hit.pages.last.endOffset, 260);
+
+    final miss = await layouts.read(bookId: bookId, chapterIndex: 0, layoutHash: 999);
+    expect(miss, isNull);
+  });
+
+  test('rewriting the same page layout replaces instead of duplicating', () async {
+    final layouts = DriftPageLayoutRepository(db);
+    final bookId = await books.insert(_book());
+    CachedPageLayout layout(int end) => CachedPageLayout(
+      bookId: bookId,
+      chapterIndex: 1,
+      layoutHash: 7,
+      pages: <PageExtent>[PageExtent(startOffset: 0, endOffset: end)],
+      computedAt: DateTime.utc(2026, 10, 31),
+    );
+
+    await layouts.write(layout(50));
+    await layouts.write(layout(80));
+
+    final hit = await layouts.read(bookId: bookId, chapterIndex: 1, layoutHash: 7);
+    expect(hit!.pages.single.endOffset, 80);
+    final rows = await db.select(db.pageLayouts).get();
+    expect(rows, hasLength(1));
+  });
+
+  test('stale page layouts can be deleted', () async {
+    final layouts = DriftPageLayoutRepository(db);
+    final bookId = await books.insert(_book());
+    await layouts.write(
+      CachedPageLayout(
+        bookId: bookId,
+        chapterIndex: 0,
+        layoutHash: 1,
+        pages: const <PageExtent>[PageExtent(startOffset: 0, endOffset: 10)],
+        computedAt: DateTime.utc(2026),
+      ),
+    );
+
+    final deleted = await layouts.deleteOlderThan(DateTime.utc(2026, 6));
+    expect(deleted, 1);
+    expect(await layouts.read(bookId: bookId, chapterIndex: 0, layoutHash: 1), isNull);
+  });
+
+  test('reader settings round-trip and clamp out-of-range values', () async {
+    final settings = DriftSettingsRepository(db);
+    expect(await settings.read(), ReaderSettings.defaults);
+
+    await settings.save(
+      const ReaderSettings(fontSize: 40, lineHeight: 5, themeId: 'night', pageTurnId: 'none'),
+    );
+
+    final stored = await settings.read();
+    expect(stored.fontSize, 30);
+    expect(stored.lineHeight, 2.4);
+    expect(stored.themeId, 'night');
+    expect(stored.pageTurnId, 'none');
+  });
+
+  test('deleting every page layout of a book keeps other books intact', () async {
+    final layouts = DriftPageLayoutRepository(db);
+    final first = await books.insert(_book());
+    final second = await books.insert(_book(path: '/books/shanhai-$first.txt'));
+    for (final bookId in <int>[first, second]) {
+      await layouts.write(
+        CachedPageLayout(
+          bookId: bookId,
+          chapterIndex: 0,
+          layoutHash: 1,
+          pages: const <PageExtent>[PageExtent(startOffset: 0, endOffset: 10)],
+          computedAt: DateTime.utc(2026, 10, 31),
+        ),
+      );
+    }
+
+    await layouts.deleteForBook(first);
+
+    expect(await layouts.read(bookId: first, chapterIndex: 0, layoutHash: 1), isNull);
+    expect(await layouts.read(bookId: second, chapterIndex: 0, layoutHash: 1), isNotNull);
+  });
 }
 
-Book _book() => Book(
+Book _book({String path = '/books/shanhai.txt'}) => Book(
   id: 0,
   title: '山海',
   formatId: 'txt',
-  filePath: '/books/shanhai.txt',
+  filePath: path,
   fileSizeBytes: 2048,
   addedAt: DateTime.utc(2026, 10, 31),
 );

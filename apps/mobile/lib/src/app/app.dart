@@ -12,7 +12,7 @@ class ModooApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final variant = ref.watch(themeControllerProvider);
+    final AppThemeVariant variant = ref.watch(appThemeProvider);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       onGenerateTitle: (BuildContext context) => context.l10n.appName,

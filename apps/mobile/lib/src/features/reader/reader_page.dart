@@ -1,16 +1,20 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modoo_domain/modoo_domain.dart';
 import 'package:modoo_l10n/modoo_l10n.dart';
+import 'package:modoo_reader_engine/modoo_reader_engine.dart';
 
 import '../../providers/app_providers.dart';
 
-/// Vertical scrolling reader, v1 of the reading surface.
+/// Paginated reader.
 ///
-/// Scope is deliberately small (see ADR-0004): one chapter at a time, scroll
-/// only, chapter-level progress. Pagination and page-turn animation land in M2.
+/// Pages are character ranges measured with `TextPainter` (packages/ui) and
+/// cached per `layoutHash` (DEVELOPMENT_PLAN §3.5.3). Positions are saved as
+/// `(chapterIndex, charOffset)` so changing the font size never loses the
+/// reader's place.
 class ReaderPage extends ConsumerStatefulWidget {
   const ReaderPage({super.key, required this.bookId});
 
@@ -21,12 +25,24 @@ class ReaderPage extends ConsumerStatefulWidget {
 }
 
 class _ReaderPageState extends ConsumerState<ReaderPage> {
-  final ScrollController _scroll = ScrollController();
-  int _index = 0;
-  bool _restored = false;
-  double _fontSize = 18;
-  double _lineHeight = 1.6;
+  static const double _horizontalPadding = 24;
+  static const double _verticalPadding = 20;
+
+  final PageController _pageController = PageController();
+
   List<Chapter> _chapters = const <Chapter>[];
+  List<PageSpan> _pages = const <PageSpan>[];
+  int _chapterIndex = 0;
+  int _pageIndex = 0;
+  int _restoredOffset = -1;
+  bool _restored = false;
+  bool _paginating = false;
+  bool _paginateScheduled = false;
+  String? _paginateError;
+  int _paginateToken = 0;
+  int _layoutHash = 0;
+  Size _contentSize = Size.zero;
+  String _cacheKey = '';
 
   @override
   void initState() {
@@ -37,45 +53,169 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   @override
   void dispose() {
     _saveProgress();
-    _scroll.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
-  /// Resumes where the reader left off; a deleted book falls back to chapter 1.
   Future<void> _restorePosition() async {
     final ReadingProgress? progress = await ref
         .read(progressRepositoryProvider)
         .read(widget.bookId);
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     setState(() {
-      _index = progress?.chapterIndex ?? 0;
+      _chapterIndex = progress?.chapterIndex ?? 0;
+      _restoredOffset = progress?.charOffset ?? -1;
       _restored = true;
     });
   }
 
-  void _goTo(int index) {
-    if (_chapters.isEmpty) {
-      return;
+  /// Builds a [LayoutSpec] from the saved typography and the current box.
+  LayoutSpec _spec(ReaderSettings settings) => LayoutSpec(
+    fontFamily: 'System',
+    fontSize: settings.fontSize,
+    lineHeight: settings.lineHeight,
+    paragraphSpacing: 0.6,
+    horizontalPadding: _horizontalPadding,
+    verticalPadding: _verticalPadding,
+    letterSpacing: 0.2,
+  );
+
+  Future<void> _paginate({
+    required Chapter chapter,
+    required String chapterText,
+    required LayoutSpec spec,
+    required double width,
+    required double height,
+  }) async {
+    final int token = ++_paginateToken;
+    final String key = '${chapter.index}|${spec.layoutHash}|${width.round()}|${height.round()}';
+    if (key == _cacheKey) return;
+    _cacheKey = key;
+    if (mounted) {
+      setState(() {
+        _paginating = true;
+        _paginateError = null;
+      });
     }
+
+    try {
+      // Keep the reader where they were: either the position restored from the
+      // database, or the character the current page starts at (a font size
+      // change re-lays out the whole chapter).
+      final int anchor = _restoredOffset >= 0
+          ? _restoredOffset
+          : (_pages.isEmpty
+                ? -1
+                : chapter.startOffset + _pages[_pageIndex.clamp(0, _pages.length - 1)].startOffset);
+      final List<PageSpan> pages = await _layout(chapter, chapterText, spec, width, height);
+      if (!mounted || token != _paginateToken) return;
+      final int target = anchor >= 0 ? pageIndexForOffset(pages, anchor - chapter.startOffset) : 0;
+      setState(() {
+        _pages = pages;
+        _layoutHash = spec.layoutHash;
+        _contentSize = Size(width, height);
+        _paginating = false;
+        _pageIndex = target.clamp(0, math.max(0, pages.length - 1));
+        _restoredOffset = -1;
+      });
+      if (_pageController.hasClients && _pageIndex > 0) {
+        _pageController.jumpToPage(_pageIndex);
+      }
+      _saveProgress();
+    } on Object catch (error, stackTrace) {
+      // A failed layout must not leave the reader on a spinner forever.
+      if (!mounted || token != _paginateToken) return;
+      setState(() {
+        _paginating = false;
+        _pages = const <PageSpan>[];
+        _paginateError = '$error';
+      });
+      ref.read(loggerProvider).error('pagination failed', error: error, stackTrace: stackTrace);
+      _cacheKey = '';
+    }
+  }
+
+  /// Reads the cached page table for [spec] or measures the chapter and stores
+  /// the result.
+  Future<List<PageSpan>> _layout(
+    Chapter chapter,
+    String chapterText,
+    LayoutSpec spec,
+    double width,
+    double height,
+  ) async {
+    final PageLayoutRepository cache = ref.read(pageLayoutRepositoryProvider);
+    final CachedPageLayout? cached = await cache.read(
+      bookId: widget.bookId,
+      chapterIndex: chapter.index,
+      layoutHash: spec.layoutHash,
+    );
+    if (cached != null && cached.pages.isNotEmpty) {
+      return cached.pages
+          .map(
+            (PageExtent page) => PageSpan(startOffset: page.startOffset, endOffset: page.endOffset),
+          )
+          .toList(growable: false);
+    }
+
+    final List<PageSpan> pages = await ref
+        .read(textLayoutEngineProvider)
+        .paginate(
+          PaginationRequest(
+            chapterIndex: chapter.index,
+            text: chapterText,
+            spec: spec,
+            pageWidth: width,
+            pageHeight: height,
+          ),
+        );
+    unawaited(
+      cache
+          .write(
+            CachedPageLayout(
+              bookId: widget.bookId,
+              chapterIndex: chapter.index,
+              layoutHash: spec.layoutHash,
+              pages: pages
+                  .map(
+                    (PageSpan span) =>
+                        PageExtent(startOffset: span.startOffset, endOffset: span.endOffset),
+                  )
+                  .toList(growable: false),
+              computedAt: DateTime.now().toUtc(),
+            ),
+          )
+          .catchError((Object _) {}),
+    );
+    return pages;
+  }
+
+  void _goToChapter(int index) {
+    if (_chapters.isEmpty) return;
     final int next = index.clamp(0, _chapters.length - 1);
-    if (next == _index) {
-      return;
-    }
-    setState(() => _index = next);
-    if (_scroll.hasClients) {
-      _scroll.jumpTo(0);
-    }
+    if (next == _chapterIndex) return;
+    _saveProgress();
+    setState(() {
+      _chapterIndex = next;
+      _pages = const <PageSpan>[];
+      _pageIndex = 0;
+      _cacheKey = '';
+      _paginateToken++;
+    });
     _saveProgress();
   }
 
-  /// Fire-and-forget: losing a position is annoying, blocking the UI is worse.
+  void _onPageChanged(int index) {
+    setState(() => _pageIndex = index);
+    _saveProgress();
+  }
+
+  /// Fire-and-forget: losing a position is annoying, blocking a page turn is
+  /// worse.
   void _saveProgress() {
-    if (!_restored || _chapters.isEmpty) {
-      return;
-    }
-    final Chapter chapter = _chapters[_index.clamp(0, _chapters.length - 1)];
+    if (!_restored || _chapters.isEmpty || _pages.isEmpty) return;
+    final Chapter chapter = _chapters[_chapterIndex.clamp(0, _chapters.length - 1)];
+    final PageSpan page = _pages[_pageIndex.clamp(0, _pages.length - 1)];
     unawaited(
       ref
           .read(progressRepositoryProvider)
@@ -83,25 +223,52 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
             ReadingProgress(
               bookId: widget.bookId,
               chapterIndex: chapter.index,
-              charOffset: chapter.startOffset,
+              charOffset: chapter.startOffset + page.startOffset,
               updatedAt: DateTime.now().toUtc(),
               deviceId: ref.read(deviceIdProvider),
-              pageIndex: 0,
+              pageIndex: _pageIndex,
             ),
           )
           .catchError((Object _) {}),
     );
   }
 
+  void _flip(int delta) {
+    if (_pages.isEmpty) return;
+    if (delta < 0 && _pageIndex == 0) {
+      _goToChapter(_chapterIndex - 1);
+      return;
+    }
+    if (delta > 0 && _pageIndex >= _pages.length - 1) {
+      _goToChapter(_chapterIndex + 1);
+      return;
+    }
+    final int target = _pageIndex + delta;
+    if (target < 0 || target >= _pages.length) return;
+    final bool animated = ref.read(readerSettingsControllerProvider).pageTurnId == 'slide';
+    if (animated) {
+      unawaited(
+        _pageController.animateToPage(
+          target,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    } else {
+      _pageController.jumpToPage(target);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final AsyncValue<List<Chapter>> chapters = ref.watch(chaptersProvider(widget.bookId));
     final AsyncValue<String> text = ref.watch(bookTextProvider(widget.bookId));
+    final ReaderSettings settings = ref.watch(readerSettingsControllerProvider);
 
     if (chapters.hasValue) {
       _chapters = chapters.requireValue;
-      if (_restored && _chapters.isNotEmpty && _index >= _chapters.length) {
-        _index = _chapters.length - 1;
+      if (_restored && _chapters.isNotEmpty && _chapterIndex >= _chapters.length) {
+        _chapterIndex = _chapters.length - 1;
       }
     }
 
@@ -111,14 +278,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     } else if (text.hasError) {
       body = _buildError('${text.error}');
     } else if (chapters.hasValue && text.hasValue) {
-      body = _buildBody(context, chapters.requireValue, text.requireValue);
+      body = _buildPagedBody(context, chapters.requireValue, text.requireValue, settings);
     } else {
       body = const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.l10n.appName),
+        title: Text(_currentChapterTitle(context), maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: <Widget>[
           IconButton(
             tooltip: context.l10n.tocTitle,
@@ -137,6 +304,11 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
   }
 
+  String _currentChapterTitle(BuildContext context) {
+    if (_chapters.isEmpty) return context.l10n.appName;
+    return _chapters[_chapterIndex.clamp(0, _chapters.length - 1)].title;
+  }
+
   Widget _buildError(String message) => Center(
     child: Padding(
       padding: const EdgeInsets.all(24),
@@ -144,45 +316,119 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     ),
   );
 
-  Widget _buildBody(BuildContext context, List<Chapter> chapters, String text) {
+  Widget _buildPagedBody(
+    BuildContext context,
+    List<Chapter> chapters,
+    String text,
+    ReaderSettings settings,
+  ) {
     if (chapters.isEmpty) {
       return Center(child: Text(context.l10n.errorGeneric));
     }
-    final Chapter chapter = chapters[_index.clamp(0, chapters.length - 1)];
+    final Chapter chapter = chapters[_chapterIndex.clamp(0, chapters.length - 1)];
     final int start = chapter.startOffset.clamp(0, text.length);
     final int end = chapter.endOffset.clamp(start, text.length);
-    final String body = text.substring(start, end);
-    final bool isLast = _index >= chapters.length - 1;
+    final String chapterText = text.substring(start, end);
+    final LayoutSpec spec = _spec(settings);
 
-    return Scrollbar(
-      controller: _scroll,
-      child: SingleChildScrollView(
-        controller: _scroll,
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              chapter.title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              body.trim(),
-              style: TextStyle(fontSize: _fontSize, height: _lineHeight, letterSpacing: 0.2),
-            ),
-            const SizedBox(height: 32),
-            Center(
-              child: isLast
-                  ? Text(context.l10n.endOfChapter, style: Theme.of(context).textTheme.bodySmall)
-                  : OutlinedButton(
-                      onPressed: () => _goTo(_index + 1),
-                      child: Text(context.l10n.nextChapter),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double width = math.max(80, constraints.maxWidth - _horizontalPadding * 2);
+        final double height = math.max(80, constraints.maxHeight - _verticalPadding * 2);
+        final bool stale =
+            _pages.isEmpty || _layoutHash != spec.layoutHash || _contentSize != Size(width, height);
+        // Measuring has side effects (cache writes, setState), so it must not
+        // run inside the layout/build phase: schedule it for after the frame.
+        if (stale && !_paginating && !_paginateScheduled && _restored) {
+          _paginateScheduled = true;
+          WidgetsBinding.instance.addPostFrameCallback((Duration _) {
+            _paginateScheduled = false;
+            if (!mounted) return;
+            unawaited(
+              _paginate(
+                chapter: chapter,
+                chapterText: chapterText,
+                spec: spec,
+                width: width,
+                height: height,
+              ),
+            );
+          });
+        }
+        if (_pages.isEmpty) {
+          if (_paginateError != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(context.l10n.errorGeneric, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _cacheKey = '';
+                        _paginateError = null;
+                      }),
+                      child: Text(context.l10n.retry),
                     ),
+                  ],
+                ),
+              ),
+            );
+          }
+          return const Center(child: CircularProgressIndicator());
+        }
+        return Stack(
+          children: <Widget>[
+            PageView.builder(
+              controller: _pageController,
+              itemCount: _pages.length,
+              onPageChanged: _onPageChanged,
+              itemBuilder: (BuildContext context, int index) {
+                final PageSpan page = _pages[index];
+                final int from = (start + page.startOffset).clamp(0, end);
+                final int to = (start + page.endOffset).clamp(from, end);
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapUp: (TapUpDetails details) {
+                    final double x = details.localPosition.dx;
+                    if (x < constraints.maxWidth * 0.3) {
+                      _flip(-1);
+                    } else if (x > constraints.maxWidth * 0.7) {
+                      _flip(1);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: _horizontalPadding,
+                      vertical: _verticalPadding,
+                    ),
+                    child: SizedBox.expand(
+                      child: Text(
+                        text.substring(from, to).trim(),
+                        style: TextStyle(
+                          fontSize: settings.fontSize,
+                          height: settings.lineHeight,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              right: 12,
+              bottom: 4,
+              child: Text(
+                '${_pageIndex + 1} / ${_pages.length}',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -193,18 +439,20 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         child: Row(
           children: <Widget>[
             TextButton(
-              onPressed: _index > 0 ? () => _goTo(_index - 1) : null,
+              onPressed: _chapterIndex > 0 ? () => _goToChapter(_chapterIndex - 1) : null,
               child: Text(context.l10n.previousChapter),
             ),
             Expanded(
               child: Text(
-                '${_index + 1} / ${_chapters.length}',
+                '${_chapterIndex + 1} / ${_chapters.length}',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
             TextButton(
-              onPressed: _index < _chapters.length - 1 ? () => _goTo(_index + 1) : null,
+              onPressed: _chapterIndex < _chapters.length - 1
+                  ? () => _goToChapter(_chapterIndex + 1)
+                  : null,
               child: Text(context.l10n.nextChapter),
             ),
           ],
@@ -230,11 +478,11 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 itemBuilder: (BuildContext context, int index) {
                   final Chapter chapter = _chapters[index];
                   return ListTile(
-                    selected: index == _index,
+                    selected: index == _chapterIndex,
                     title: Text(chapter.title, maxLines: 1, overflow: TextOverflow.ellipsis),
                     onTap: () {
                       Navigator.of(sheetContext).pop();
-                      _goTo(index);
+                      _goToChapter(index);
                     },
                   );
                 },
@@ -251,8 +499,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       context: context,
       showDragHandle: true,
       builder: (BuildContext sheetContext) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setSheetState) {
+        return Consumer(
+          builder: (BuildContext context, WidgetRef ref, Widget? child) {
+            final ReaderSettings settings = ref.watch(readerSettingsControllerProvider);
+            final ReaderSettingsController controller = ref.read(
+              readerSettingsControllerProvider.notifier,
+            );
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -265,27 +517,44 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
-                    Text('${context.l10n.readerFontSize}  ${_fontSize.round()}'),
+                    Text('${context.l10n.readerFontSize}  ${settings.fontSize.round()}'),
                     Slider(
-                      value: _fontSize,
+                      value: settings.fontSize,
                       min: 14,
                       max: 30,
                       divisions: 16,
-                      onChanged: (double value) {
-                        setSheetState(() => _fontSize = value);
-                        setState(() {});
-                      },
+                      onChanged: controller.setFontSize,
                     ),
-                    Text('${context.l10n.readerLineHeight}  ${_lineHeight.toStringAsFixed(1)}'),
+                    Text(
+                      '${context.l10n.readerLineHeight}  ${settings.lineHeight.toStringAsFixed(1)}',
+                    ),
                     Slider(
-                      value: _lineHeight,
+                      value: settings.lineHeight,
                       min: 1.2,
                       max: 2.4,
                       divisions: 12,
-                      onChanged: (double value) {
-                        setSheetState(() => _lineHeight = value);
-                        setState(() {});
-                      },
+                      onChanged: controller.setLineHeight,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.l10n.readerPageTurn,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: <ButtonSegment<String>>[
+                        ButtonSegment<String>(
+                          value: 'slide',
+                          label: Text(context.l10n.pageTurnSlide),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'none',
+                          label: Text(context.l10n.pageTurnNone),
+                        ),
+                      ],
+                      selected: <String>{settings.pageTurnId},
+                      onSelectionChanged: (Set<String> selection) =>
+                          controller.setPageTurnId(selection.first),
                     ),
                   ],
                 ),

@@ -98,6 +98,18 @@
   "@readerLineHeight": {
     "description": "Label of the line height slider."
   },
+  "readerPageTurn": "翻页",
+  "@readerPageTurn": {
+    "description": "Label of the page turn mode selector."
+  },
+  "pageTurnSlide": "滑动",
+  "@pageTurnSlide": {
+    "description": "Page turn mode: animated horizontal slide."
+  },
+  "pageTurnNone": "无动画",
+  "@pageTurnNone": {
+    "description": "Page turn mode: jump straight to the next page."
+  },
   "previousChapter": "上一章",
   "@previousChapter": {
     "description": "Jump to the previous chapter."

@@ -140,6 +140,61 @@ final class LibraryDirectoryProvider extends $FunctionalProvider<Directory, Dire
 
 String _$libraryDirectoryHash() => r'e09098e875d787b49d80b83e4ad8b22ec6ece61f';
 
+/// Reader preferences as they were when the app started.
+///
+/// Loaded in `main` so the first frame already uses the saved theme instead of
+/// flashing the default one, then overridden there.
+
+@ProviderFor(initialReaderSettings)
+final initialReaderSettingsProvider = InitialReaderSettingsProvider._();
+
+/// Reader preferences as they were when the app started.
+///
+/// Loaded in `main` so the first frame already uses the saved theme instead of
+/// flashing the default one, then overridden there.
+
+final class InitialReaderSettingsProvider
+    extends $FunctionalProvider<ReaderSettings, ReaderSettings, ReaderSettings>
+    with $Provider<ReaderSettings> {
+  /// Reader preferences as they were when the app started.
+  ///
+  /// Loaded in `main` so the first frame already uses the saved theme instead of
+  /// flashing the default one, then overridden there.
+  InitialReaderSettingsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'initialReaderSettingsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$initialReaderSettingsHash();
+
+  @$internal
+  @override
+  $ProviderElement<ReaderSettings> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ReaderSettings create(Ref ref) {
+    return initialReaderSettings(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReaderSettings value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReaderSettings>(value),
+    );
+  }
+}
+
+String _$initialReaderSettingsHash() => r'85734c023fb6b4835d57b868b4ff5aea58b407db';
+
 /// Single entry point to the shelf.
 
 @ProviderFor(bookRepository)
@@ -277,6 +332,189 @@ final class ProgressRepositoryProvider
 }
 
 String _$progressRepositoryHash() => r'eb9fc8dcc51f379088e3b31d9fe0422cac1043bc';
+
+/// Persisted reader preferences.
+
+@ProviderFor(settingsRepository)
+final settingsRepositoryProvider = SettingsRepositoryProvider._();
+
+/// Persisted reader preferences.
+
+final class SettingsRepositoryProvider
+    extends $FunctionalProvider<SettingsRepository, SettingsRepository, SettingsRepository>
+    with $Provider<SettingsRepository> {
+  /// Persisted reader preferences.
+  SettingsRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'settingsRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$settingsRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<SettingsRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SettingsRepository create(Ref ref) {
+    return settingsRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SettingsRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SettingsRepository>(value),
+    );
+  }
+}
+
+String _$settingsRepositoryHash() => r'0eda22c9c7a5e68c8661bf58b528d73264ef9a19';
+
+/// Pagination cache; a miss only costs one re-layout.
+
+@ProviderFor(pageLayoutRepository)
+final pageLayoutRepositoryProvider = PageLayoutRepositoryProvider._();
+
+/// Pagination cache; a miss only costs one re-layout.
+
+final class PageLayoutRepositoryProvider
+    extends $FunctionalProvider<PageLayoutRepository, PageLayoutRepository, PageLayoutRepository>
+    with $Provider<PageLayoutRepository> {
+  /// Pagination cache; a miss only costs one re-layout.
+  PageLayoutRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'pageLayoutRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$pageLayoutRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<PageLayoutRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  PageLayoutRepository create(Ref ref) {
+    return pageLayoutRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PageLayoutRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PageLayoutRepository>(value),
+    );
+  }
+}
+
+String _$pageLayoutRepositoryHash() => r'ddffd087735b2c4522acb82c541d445bd524ab32';
+
+/// Measured with `TextPainter`, so it has to run on the UI isolate.
+
+@ProviderFor(textLayoutEngine)
+final textLayoutEngineProvider = TextLayoutEngineProvider._();
+
+/// Measured with `TextPainter`, so it has to run on the UI isolate.
+
+final class TextLayoutEngineProvider
+    extends $FunctionalProvider<TextLayoutEngine, TextLayoutEngine, TextLayoutEngine>
+    with $Provider<TextLayoutEngine> {
+  /// Measured with `TextPainter`, so it has to run on the UI isolate.
+  TextLayoutEngineProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'textLayoutEngineProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$textLayoutEngineHash();
+
+  @$internal
+  @override
+  $ProviderElement<TextLayoutEngine> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  TextLayoutEngine create(Ref ref) {
+    return textLayoutEngine(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TextLayoutEngine value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TextLayoutEngine>(value),
+    );
+  }
+}
+
+String _$textLayoutEngineHash() => r'0fd4327a9f3b44077086f26892e62ebd30f9b2d2';
+
+/// Diagnostics channel; overridden in tests that want silence.
+
+@ProviderFor(logger)
+final loggerProvider = LoggerProvider._();
+
+/// Diagnostics channel; overridden in tests that want silence.
+
+final class LoggerProvider extends $FunctionalProvider<ModooLogger, ModooLogger, ModooLogger>
+    with $Provider<ModooLogger> {
+  /// Diagnostics channel; overridden in tests that want silence.
+  LoggerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'loggerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$loggerHash();
+
+  @$internal
+  @override
+  $ProviderElement<ModooLogger> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ModooLogger create(Ref ref) {
+    return logger(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ModooLogger value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ModooLogger>(value),
+    );
+  }
+}
+
+String _$loggerHash() => r'7609d6fe4c101ba6d63e0ff47418212b234a7dfe';
 
 /// Books on the shelf, live from the database.
 
@@ -613,31 +851,110 @@ final class DeviceIdProvider extends $FunctionalProvider<String, String, String>
 
 String _$deviceIdHash() => r'070daf923bc513c17d51f4eb7d5fffdedae4e8e8';
 
-/// Reading theme; persisted in M1 follow-up.
+/// Reader typography, persisted on every change.
+///
+/// Writes are fire-and-forget: a lost preference is a nuisance, a slider that
+/// waits for SQLite is worse.
 
-@ProviderFor(ThemeController)
-final themeControllerProvider = ThemeControllerProvider._();
+@ProviderFor(ReaderSettingsController)
+final readerSettingsControllerProvider = ReaderSettingsControllerProvider._();
 
-/// Reading theme; persisted in M1 follow-up.
-final class ThemeControllerProvider extends $NotifierProvider<ThemeController, AppThemeVariant> {
-  /// Reading theme; persisted in M1 follow-up.
-  ThemeControllerProvider._()
+/// Reader typography, persisted on every change.
+///
+/// Writes are fire-and-forget: a lost preference is a nuisance, a slider that
+/// waits for SQLite is worse.
+final class ReaderSettingsControllerProvider
+    extends $NotifierProvider<ReaderSettingsController, ReaderSettings> {
+  /// Reader typography, persisted on every change.
+  ///
+  /// Writes are fire-and-forget: a lost preference is a nuisance, a slider that
+  /// waits for SQLite is worse.
+  ReaderSettingsControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'themeControllerProvider',
+        name: r'readerSettingsControllerProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$themeControllerHash();
+  String debugGetCreateSourceHash() => _$readerSettingsControllerHash();
 
   @$internal
   @override
-  ThemeController create() => ThemeController();
+  ReaderSettingsController create() => ReaderSettingsController();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReaderSettings value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReaderSettings>(value),
+    );
+  }
+}
+
+String _$readerSettingsControllerHash() => r'b7eb4bc81a1567f2e0cba5a9fc2a21aef30dc81d';
+
+/// Reader typography, persisted on every change.
+///
+/// Writes are fire-and-forget: a lost preference is a nuisance, a slider that
+/// waits for SQLite is worse.
+
+abstract class _$ReaderSettingsController extends $Notifier<ReaderSettings> {
+  ReaderSettings build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<ReaderSettings, ReaderSettings>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<ReaderSettings, ReaderSettings>,
+              ReaderSettings,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
+/// Reading theme derived from the persisted settings.
+
+@ProviderFor(appTheme)
+final appThemeProvider = AppThemeProvider._();
+
+/// Reading theme derived from the persisted settings.
+
+final class AppThemeProvider
+    extends $FunctionalProvider<AppThemeVariant, AppThemeVariant, AppThemeVariant>
+    with $Provider<AppThemeVariant> {
+  /// Reading theme derived from the persisted settings.
+  AppThemeProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'appThemeProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$appThemeHash();
+
+  @$internal
+  @override
+  $ProviderElement<AppThemeVariant> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AppThemeVariant create(Ref ref) {
+    return appTheme(ref);
+  }
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(AppThemeVariant value) {
@@ -648,24 +965,4 @@ final class ThemeControllerProvider extends $NotifierProvider<ThemeController, A
   }
 }
 
-String _$themeControllerHash() => r'c928efeca15066f32e692830ceb1da0e06898716';
-
-/// Reading theme; persisted in M1 follow-up.
-
-abstract class _$ThemeController extends $Notifier<AppThemeVariant> {
-  AppThemeVariant build();
-  @$mustCallSuper
-  @override
-  WhenComplete runBuild() {
-    final ref = this.ref as $Ref<AppThemeVariant, AppThemeVariant>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<AppThemeVariant, AppThemeVariant>,
-              AppThemeVariant,
-              Object?,
-              Object?
-            >;
-    return element.handleCreate(ref, build);
-  }
-}
+String _$appThemeHash() => r'b7d05314b1f3f47893506290e2db8e33de5e1cc3';

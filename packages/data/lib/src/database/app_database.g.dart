@@ -1497,17 +1497,641 @@ class ProgressRowsCompanion extends UpdateCompanion<ProgressRow> {
   }
 }
 
+class $PageLayoutsTable extends PageLayouts with TableInfo<$PageLayoutsTable, PageLayoutRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PageLayoutsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<int> bookId = GeneratedColumn<int>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES books (id)'),
+  );
+  static const VerificationMeta _chapterIndexMeta = const VerificationMeta('chapterIndex');
+  @override
+  late final GeneratedColumn<int> chapterIndex = GeneratedColumn<int>(
+    'chapter_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _layoutHashMeta = const VerificationMeta('layoutHash');
+  @override
+  late final GeneratedColumn<int> layoutHash = GeneratedColumn<int>(
+    'layout_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pageCountMeta = const VerificationMeta('pageCount');
+  @override
+  late final GeneratedColumn<int> pageCount = GeneratedColumn<int>(
+    'page_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _spansMeta = const VerificationMeta('spans');
+  @override
+  late final GeneratedColumn<String> spans = GeneratedColumn<String>(
+    'spans',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _computedAtMeta = const VerificationMeta('computedAt');
+  @override
+  late final GeneratedColumn<DateTime> computedAt = GeneratedColumn<DateTime>(
+    'computed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bookId,
+    chapterIndex,
+    layoutHash,
+    pageCount,
+    spans,
+    computedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'page_layouts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PageLayoutRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(_bookIdMeta, bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta));
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('chapter_index')) {
+      context.handle(
+        _chapterIndexMeta,
+        chapterIndex.isAcceptableOrUnknown(data['chapter_index']!, _chapterIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chapterIndexMeta);
+    }
+    if (data.containsKey('layout_hash')) {
+      context.handle(
+        _layoutHashMeta,
+        layoutHash.isAcceptableOrUnknown(data['layout_hash']!, _layoutHashMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_layoutHashMeta);
+    }
+    if (data.containsKey('page_count')) {
+      context.handle(
+        _pageCountMeta,
+        pageCount.isAcceptableOrUnknown(data['page_count']!, _pageCountMeta),
+      );
+    }
+    if (data.containsKey('spans')) {
+      context.handle(_spansMeta, spans.isAcceptableOrUnknown(data['spans']!, _spansMeta));
+    } else if (isInserting) {
+      context.missing(_spansMeta);
+    }
+    if (data.containsKey('computed_at')) {
+      context.handle(
+        _computedAtMeta,
+        computedAt.isAcceptableOrUnknown(data['computed_at']!, _computedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_computedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {bookId, chapterIndex, layoutHash},
+  ];
+  @override
+  PageLayoutRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PageLayoutRow(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}book_id'],
+      )!,
+      chapterIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chapter_index'],
+      )!,
+      layoutHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}layout_hash'],
+      )!,
+      pageCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}page_count'],
+      )!,
+      spans: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}spans'],
+      )!,
+      computedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}computed_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PageLayoutsTable createAlias(String alias) {
+    return $PageLayoutsTable(attachedDatabase, alias);
+  }
+}
+
+class PageLayoutRow extends DataClass implements Insertable<PageLayoutRow> {
+  final int id;
+  final int bookId;
+  final int chapterIndex;
+
+  /// FNV-1a hash of the `LayoutSpec` the pages were measured with.
+  final int layoutHash;
+  final int pageCount;
+
+  /// JSON array of `[startOffset, endOffset]` pairs, one per page.
+  final String spans;
+  final DateTime computedAt;
+  const PageLayoutRow({
+    required this.id,
+    required this.bookId,
+    required this.chapterIndex,
+    required this.layoutHash,
+    required this.pageCount,
+    required this.spans,
+    required this.computedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['book_id'] = Variable<int>(bookId);
+    map['chapter_index'] = Variable<int>(chapterIndex);
+    map['layout_hash'] = Variable<int>(layoutHash);
+    map['page_count'] = Variable<int>(pageCount);
+    map['spans'] = Variable<String>(spans);
+    map['computed_at'] = Variable<DateTime>(computedAt);
+    return map;
+  }
+
+  PageLayoutsCompanion toCompanion(bool nullToAbsent) {
+    return PageLayoutsCompanion(
+      id: Value(id),
+      bookId: Value(bookId),
+      chapterIndex: Value(chapterIndex),
+      layoutHash: Value(layoutHash),
+      pageCount: Value(pageCount),
+      spans: Value(spans),
+      computedAt: Value(computedAt),
+    );
+  }
+
+  factory PageLayoutRow.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PageLayoutRow(
+      id: serializer.fromJson<int>(json['id']),
+      bookId: serializer.fromJson<int>(json['bookId']),
+      chapterIndex: serializer.fromJson<int>(json['chapterIndex']),
+      layoutHash: serializer.fromJson<int>(json['layoutHash']),
+      pageCount: serializer.fromJson<int>(json['pageCount']),
+      spans: serializer.fromJson<String>(json['spans']),
+      computedAt: serializer.fromJson<DateTime>(json['computedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'bookId': serializer.toJson<int>(bookId),
+      'chapterIndex': serializer.toJson<int>(chapterIndex),
+      'layoutHash': serializer.toJson<int>(layoutHash),
+      'pageCount': serializer.toJson<int>(pageCount),
+      'spans': serializer.toJson<String>(spans),
+      'computedAt': serializer.toJson<DateTime>(computedAt),
+    };
+  }
+
+  PageLayoutRow copyWith({
+    int? id,
+    int? bookId,
+    int? chapterIndex,
+    int? layoutHash,
+    int? pageCount,
+    String? spans,
+    DateTime? computedAt,
+  }) => PageLayoutRow(
+    id: id ?? this.id,
+    bookId: bookId ?? this.bookId,
+    chapterIndex: chapterIndex ?? this.chapterIndex,
+    layoutHash: layoutHash ?? this.layoutHash,
+    pageCount: pageCount ?? this.pageCount,
+    spans: spans ?? this.spans,
+    computedAt: computedAt ?? this.computedAt,
+  );
+  PageLayoutRow copyWithCompanion(PageLayoutsCompanion data) {
+    return PageLayoutRow(
+      id: data.id.present ? data.id.value : this.id,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      chapterIndex: data.chapterIndex.present ? data.chapterIndex.value : this.chapterIndex,
+      layoutHash: data.layoutHash.present ? data.layoutHash.value : this.layoutHash,
+      pageCount: data.pageCount.present ? data.pageCount.value : this.pageCount,
+      spans: data.spans.present ? data.spans.value : this.spans,
+      computedAt: data.computedAt.present ? data.computedAt.value : this.computedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PageLayoutRow(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('chapterIndex: $chapterIndex, ')
+          ..write('layoutHash: $layoutHash, ')
+          ..write('pageCount: $pageCount, ')
+          ..write('spans: $spans, ')
+          ..write('computedAt: $computedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, bookId, chapterIndex, layoutHash, pageCount, spans, computedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PageLayoutRow &&
+          other.id == this.id &&
+          other.bookId == this.bookId &&
+          other.chapterIndex == this.chapterIndex &&
+          other.layoutHash == this.layoutHash &&
+          other.pageCount == this.pageCount &&
+          other.spans == this.spans &&
+          other.computedAt == this.computedAt);
+}
+
+class PageLayoutsCompanion extends UpdateCompanion<PageLayoutRow> {
+  final Value<int> id;
+  final Value<int> bookId;
+  final Value<int> chapterIndex;
+  final Value<int> layoutHash;
+  final Value<int> pageCount;
+  final Value<String> spans;
+  final Value<DateTime> computedAt;
+  const PageLayoutsCompanion({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.chapterIndex = const Value.absent(),
+    this.layoutHash = const Value.absent(),
+    this.pageCount = const Value.absent(),
+    this.spans = const Value.absent(),
+    this.computedAt = const Value.absent(),
+  });
+  PageLayoutsCompanion.insert({
+    this.id = const Value.absent(),
+    required int bookId,
+    required int chapterIndex,
+    required int layoutHash,
+    this.pageCount = const Value.absent(),
+    required String spans,
+    required DateTime computedAt,
+  }) : bookId = Value(bookId),
+       chapterIndex = Value(chapterIndex),
+       layoutHash = Value(layoutHash),
+       spans = Value(spans),
+       computedAt = Value(computedAt);
+  static Insertable<PageLayoutRow> custom({
+    Expression<int>? id,
+    Expression<int>? bookId,
+    Expression<int>? chapterIndex,
+    Expression<int>? layoutHash,
+    Expression<int>? pageCount,
+    Expression<String>? spans,
+    Expression<DateTime>? computedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookId != null) 'book_id': bookId,
+      if (chapterIndex != null) 'chapter_index': chapterIndex,
+      if (layoutHash != null) 'layout_hash': layoutHash,
+      if (pageCount != null) 'page_count': pageCount,
+      if (spans != null) 'spans': spans,
+      if (computedAt != null) 'computed_at': computedAt,
+    });
+  }
+
+  PageLayoutsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? bookId,
+    Value<int>? chapterIndex,
+    Value<int>? layoutHash,
+    Value<int>? pageCount,
+    Value<String>? spans,
+    Value<DateTime>? computedAt,
+  }) {
+    return PageLayoutsCompanion(
+      id: id ?? this.id,
+      bookId: bookId ?? this.bookId,
+      chapterIndex: chapterIndex ?? this.chapterIndex,
+      layoutHash: layoutHash ?? this.layoutHash,
+      pageCount: pageCount ?? this.pageCount,
+      spans: spans ?? this.spans,
+      computedAt: computedAt ?? this.computedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<int>(bookId.value);
+    }
+    if (chapterIndex.present) {
+      map['chapter_index'] = Variable<int>(chapterIndex.value);
+    }
+    if (layoutHash.present) {
+      map['layout_hash'] = Variable<int>(layoutHash.value);
+    }
+    if (pageCount.present) {
+      map['page_count'] = Variable<int>(pageCount.value);
+    }
+    if (spans.present) {
+      map['spans'] = Variable<String>(spans.value);
+    }
+    if (computedAt.present) {
+      map['computed_at'] = Variable<DateTime>(computedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PageLayoutsCompanion(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('chapterIndex: $chapterIndex, ')
+          ..write('layoutHash: $layoutHash, ')
+          ..write('pageCount: $pageCount, ')
+          ..write('spans: $spans, ')
+          ..write('computedAt: $computedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AppSettingsTable extends AppSettings with TableInfo<$AppSettingsTable, SettingRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SettingRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(_keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(_valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  SettingRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SettingRow(
+      key: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $AppSettingsTable createAlias(String alias) {
+    return $AppSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class SettingRow extends DataClass implements Insertable<SettingRow> {
+  final String key;
+  final String value;
+  const SettingRow({required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    return map;
+  }
+
+  AppSettingsCompanion toCompanion(bool nullToAbsent) {
+    return AppSettingsCompanion(key: Value(key), value: Value(value));
+  }
+
+  factory SettingRow.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SettingRow(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+    };
+  }
+
+  SettingRow copyWith({String? key, String? value}) =>
+      SettingRow(key: key ?? this.key, value: value ?? this.value);
+  SettingRow copyWithCompanion(AppSettingsCompanion data) {
+    return SettingRow(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SettingRow(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SettingRow && other.key == this.key && other.value == this.value);
+}
+
+class AppSettingsCompanion extends UpdateCompanion<SettingRow> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> rowid;
+  const AppSettingsCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppSettingsCompanion.insert({
+    required String key,
+    required String value,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value);
+  static Insertable<SettingRow> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppSettingsCompanion copyWith({Value<String>? key, Value<String>? value, Value<int>? rowid}) {
+    return AppSettingsCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingsCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $BooksTable books = $BooksTable(this);
   late final $ChaptersTable chapters = $ChaptersTable(this);
   late final $ProgressRowsTable progressRows = $ProgressRowsTable(this);
+  late final $PageLayoutsTable pageLayouts = $PageLayoutsTable(this);
+  late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [books, chapters, progressRows];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    books,
+    chapters,
+    progressRows,
+    pageLayouts,
+    appSettings,
+  ];
 }
 
 typedef $$BooksTableCreateCompanionBuilder =
@@ -1572,6 +2196,20 @@ final class $$BooksTableReferences extends BaseReferences<_$AppDatabase, $BooksT
     ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_progressRowsRefsTable($_db));
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$PageLayoutsTable, List<PageLayoutRow>> _pageLayoutsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(db.pageLayouts, aliasName: 'books__id__page_layouts__book_id');
+
+  $$PageLayoutsTableProcessedTableManager get pageLayoutsRefs {
+    final manager = $$PageLayoutsTableTableManager(
+      $_db,
+      $_db.pageLayouts,
+    ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_pageLayoutsRefsTable($_db));
     return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
   }
 }
@@ -1650,6 +2288,26 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
           $$ProgressRowsTableFilterComposer(
             $db: $db,
             $table: $db.progressRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> pageLayoutsRefs(
+    Expression<bool> Function($$PageLayoutsTableFilterComposer f) f,
+  ) {
+    final $$PageLayoutsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pageLayouts,
+      getReferencedColumn: (t) => t.bookId,
+      builder: (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+          $$PageLayoutsTableFilterComposer(
+            $db: $db,
+            $table: $db.pageLayouts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
@@ -1788,6 +2446,26 @@ class $$BooksTableAnnotationComposer extends Composer<_$AppDatabase, $BooksTable
     );
     return f(composer);
   }
+
+  Expression<T> pageLayoutsRefs<T extends Object>(
+    Expression<T> Function($$PageLayoutsTableAnnotationComposer a) f,
+  ) {
+    final $$PageLayoutsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pageLayouts,
+      getReferencedColumn: (t) => t.bookId,
+      builder: (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+          $$PageLayoutsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.pageLayouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$BooksTableTableManager
@@ -1803,7 +2481,7 @@ class $$BooksTableTableManager
           $$BooksTableUpdateCompanionBuilder,
           (BookRow, $$BooksTableReferences),
           BookRow,
-          PrefetchHooks Function({bool chaptersRefs, bool progressRowsRefs})
+          PrefetchHooks Function({bool chaptersRefs, bool progressRowsRefs, bool pageLayoutsRefs})
         > {
   $$BooksTableTableManager(_$AppDatabase db, $BooksTable table)
     : super(
@@ -1871,40 +2549,52 @@ class $$BooksTableTableManager
               ),
           withReferenceMapper: (p0) =>
               p0.map((e) => (e.readTable(table), $$BooksTableReferences(db, table, e))).toList(),
-          prefetchHooksCallback: ({chaptersRefs = false, progressRowsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (chaptersRefs) db.chapters,
-                if (progressRowsRefs) db.progressRows,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (chaptersRefs)
-                    await $_getPrefetchedData<BookRow, $BooksTable, ChapterRow>(
-                      currentTable: table,
-                      referencedTable: $$BooksTableReferences._chaptersRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$BooksTableReferences(db, table, p0).chaptersRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.bookId == item.id),
-                      typedResults: items,
-                    ),
-                  if (progressRowsRefs)
-                    await $_getPrefetchedData<BookRow, $BooksTable, ProgressRow>(
-                      currentTable: table,
-                      referencedTable: $$BooksTableReferences._progressRowsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$BooksTableReferences(db, table, p0).progressRowsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.bookId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({chaptersRefs = false, progressRowsRefs = false, pageLayoutsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (chaptersRefs) db.chapters,
+                    if (progressRowsRefs) db.progressRows,
+                    if (pageLayoutsRefs) db.pageLayouts,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (chaptersRefs)
+                        await $_getPrefetchedData<BookRow, $BooksTable, ChapterRow>(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences._chaptersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(db, table, p0).chaptersRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.bookId == item.id),
+                          typedResults: items,
+                        ),
+                      if (progressRowsRefs)
+                        await $_getPrefetchedData<BookRow, $BooksTable, ProgressRow>(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences._progressRowsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(db, table, p0).progressRowsRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.bookId == item.id),
+                          typedResults: items,
+                        ),
+                      if (pageLayoutsRefs)
+                        await $_getPrefetchedData<BookRow, $BooksTable, PageLayoutRow>(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences._pageLayoutsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(db, table, p0).pageLayoutsRefs,
+                          referencedItemsForCurrentItem: (item, referencedItems) =>
+                              referencedItems.where((e) => e.bookId == item.id),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -1921,7 +2611,7 @@ typedef $$BooksTableProcessedTableManager =
       $$BooksTableUpdateCompanionBuilder,
       (BookRow, $$BooksTableReferences),
       BookRow,
-      PrefetchHooks Function({bool chaptersRefs, bool progressRowsRefs})
+      PrefetchHooks Function({bool chaptersRefs, bool progressRowsRefs, bool pageLayoutsRefs})
     >;
 typedef $$ChaptersTableCreateCompanionBuilder =
     ChaptersCompanion Function({
@@ -2517,6 +3207,407 @@ typedef $$ProgressRowsTableProcessedTableManager =
       ProgressRow,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$PageLayoutsTableCreateCompanionBuilder =
+    PageLayoutsCompanion Function({
+      Value<int> id,
+      required int bookId,
+      required int chapterIndex,
+      required int layoutHash,
+      Value<int> pageCount,
+      required String spans,
+      required DateTime computedAt,
+    });
+typedef $$PageLayoutsTableUpdateCompanionBuilder =
+    PageLayoutsCompanion Function({
+      Value<int> id,
+      Value<int> bookId,
+      Value<int> chapterIndex,
+      Value<int> layoutHash,
+      Value<int> pageCount,
+      Value<String> spans,
+      Value<DateTime> computedAt,
+    });
+
+final class $$PageLayoutsTableReferences
+    extends BaseReferences<_$AppDatabase, $PageLayoutsTable, PageLayoutRow> {
+  $$PageLayoutsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $BooksTable _bookIdTable(_$AppDatabase db) =>
+      db.books.createAlias('page_layouts__book_id__books__id');
+
+  $$BooksTableProcessedTableManager get bookId {
+    final $_column = $_itemColumn<int>('book_id')!;
+
+    final manager = $$BooksTableTableManager(
+      $_db,
+      $_db.books,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$PageLayoutsTableFilterComposer extends Composer<_$AppDatabase, $PageLayoutsTable> {
+  $$PageLayoutsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get chapterIndex =>
+      $composableBuilder(column: $table.chapterIndex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get layoutHash =>
+      $composableBuilder(column: $table.layoutHash, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get pageCount =>
+      $composableBuilder(column: $table.pageCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get spans =>
+      $composableBuilder(column: $table.spans, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get computedAt =>
+      $composableBuilder(column: $table.computedAt, builder: (column) => ColumnFilters(column));
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder: (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+          $$BooksTableFilterComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PageLayoutsTableOrderingComposer extends Composer<_$AppDatabase, $PageLayoutsTable> {
+  $$PageLayoutsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get chapterIndex =>
+      $composableBuilder(column: $table.chapterIndex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get layoutHash =>
+      $composableBuilder(column: $table.layoutHash, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get pageCount =>
+      $composableBuilder(column: $table.pageCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get spans =>
+      $composableBuilder(column: $table.spans, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get computedAt =>
+      $composableBuilder(column: $table.computedAt, builder: (column) => ColumnOrderings(column));
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder: (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+          $$BooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PageLayoutsTableAnnotationComposer extends Composer<_$AppDatabase, $PageLayoutsTable> {
+  $$PageLayoutsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get chapterIndex =>
+      $composableBuilder(column: $table.chapterIndex, builder: (column) => column);
+
+  GeneratedColumn<int> get layoutHash =>
+      $composableBuilder(column: $table.layoutHash, builder: (column) => column);
+
+  GeneratedColumn<int> get pageCount =>
+      $composableBuilder(column: $table.pageCount, builder: (column) => column);
+
+  GeneratedColumn<String> get spans =>
+      $composableBuilder(column: $table.spans, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get computedAt =>
+      $composableBuilder(column: $table.computedAt, builder: (column) => column);
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder: (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
+          $$BooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PageLayoutsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PageLayoutsTable,
+          PageLayoutRow,
+          $$PageLayoutsTableFilterComposer,
+          $$PageLayoutsTableOrderingComposer,
+          $$PageLayoutsTableAnnotationComposer,
+          $$PageLayoutsTableCreateCompanionBuilder,
+          $$PageLayoutsTableUpdateCompanionBuilder,
+          (PageLayoutRow, $$PageLayoutsTableReferences),
+          PageLayoutRow,
+          PrefetchHooks Function({bool bookId})
+        > {
+  $$PageLayoutsTableTableManager(_$AppDatabase db, $PageLayoutsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$PageLayoutsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$PageLayoutsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PageLayoutsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> bookId = const Value.absent(),
+                Value<int> chapterIndex = const Value.absent(),
+                Value<int> layoutHash = const Value.absent(),
+                Value<int> pageCount = const Value.absent(),
+                Value<String> spans = const Value.absent(),
+                Value<DateTime> computedAt = const Value.absent(),
+              }) => PageLayoutsCompanion(
+                id: id,
+                bookId: bookId,
+                chapterIndex: chapterIndex,
+                layoutHash: layoutHash,
+                pageCount: pageCount,
+                spans: spans,
+                computedAt: computedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int bookId,
+                required int chapterIndex,
+                required int layoutHash,
+                Value<int> pageCount = const Value.absent(),
+                required String spans,
+                required DateTime computedAt,
+              }) => PageLayoutsCompanion.insert(
+                id: id,
+                bookId: bookId,
+                chapterIndex: chapterIndex,
+                layoutHash: layoutHash,
+                pageCount: pageCount,
+                spans: spans,
+                computedAt: computedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), $$PageLayoutsTableReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: ({bookId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bookId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bookId,
+                                referencedTable: $$PageLayoutsTableReferences._bookIdTable(db),
+                                referencedColumn: $$PageLayoutsTableReferences._bookIdTable(db).id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PageLayoutsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PageLayoutsTable,
+      PageLayoutRow,
+      $$PageLayoutsTableFilterComposer,
+      $$PageLayoutsTableOrderingComposer,
+      $$PageLayoutsTableAnnotationComposer,
+      $$PageLayoutsTableCreateCompanionBuilder,
+      $$PageLayoutsTableUpdateCompanionBuilder,
+      (PageLayoutRow, $$PageLayoutsTableReferences),
+      PageLayoutRow,
+      PrefetchHooks Function({bool bookId})
+    >;
+typedef $$AppSettingsTableCreateCompanionBuilder =
+    AppSettingsCompanion Function({required String key, required String value, Value<int> rowid});
+typedef $$AppSettingsTableUpdateCompanionBuilder =
+    AppSettingsCompanion Function({Value<String> key, Value<String> value, Value<int> rowid});
+
+class $$AppSettingsTableFilterComposer extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => ColumnFilters(column));
+}
+
+class $$AppSettingsTableOrderingComposer extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AppSettingsTableAnnotationComposer extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$AppSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppSettingsTable,
+          SettingRow,
+          $$AppSettingsTableFilterComposer,
+          $$AppSettingsTableOrderingComposer,
+          $$AppSettingsTableAnnotationComposer,
+          $$AppSettingsTableCreateCompanionBuilder,
+          $$AppSettingsTableUpdateCompanionBuilder,
+          (SettingRow, BaseReferences<_$AppDatabase, $AppSettingsTable, SettingRow>),
+          SettingRow,
+          PrefetchHooks Function()
+        > {
+  $$AppSettingsTableTableManager(_$AppDatabase db, $AppSettingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$AppSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$AppSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingsCompanion(key: key, value: value, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String value,
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingsCompanion.insert(key: key, value: value, rowid: rowid),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppSettingsTable,
+      SettingRow,
+      $$AppSettingsTableFilterComposer,
+      $$AppSettingsTableOrderingComposer,
+      $$AppSettingsTableAnnotationComposer,
+      $$AppSettingsTableCreateCompanionBuilder,
+      $$AppSettingsTableUpdateCompanionBuilder,
+      (SettingRow, BaseReferences<_$AppDatabase, $AppSettingsTable, SettingRow>),
+      SettingRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2525,4 +3616,8 @@ class $AppDatabaseManager {
   $$ChaptersTableTableManager get chapters => $$ChaptersTableTableManager(_db, _db.chapters);
   $$ProgressRowsTableTableManager get progressRows =>
       $$ProgressRowsTableTableManager(_db, _db.progressRows);
+  $$PageLayoutsTableTableManager get pageLayouts =>
+      $$PageLayoutsTableTableManager(_db, _db.pageLayouts);
+  $$AppSettingsTableTableManager get appSettings =>
+      $$AppSettingsTableTableManager(_db, _db.appSettings);
 }
