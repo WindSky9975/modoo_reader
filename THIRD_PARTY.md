@@ -8,6 +8,7 @@
 | 许可证 | 结论 | 说明 |
 | --- | --- | --- |
 | MIT / BSD-2 / BSD-3 / Apache-2.0 / ISC / Zlib | ✅ 允许 | Apache-2.0 需在 `NOTICE` 保留归属 |
+| MPL-2.0（不改其源码） | ✅ 允许 | 文件级弱 copyleft：只约束被 MPL 覆盖的文件本身，不改即可；一旦 patch，那个文件必须继续 MPL |
 | LGPL（动态链接、不改源码） | ⚠️ 需评审 | 移动端静态链接场景基本等同 GPL，默认拒绝 |
 | GPL-2.0 / GPL-3.0 / AGPL-3.0 | ❌ 禁止 | 与 MIT 分发不兼容 |
 | 无许可证 / 自定义「仅限非商业」条款 | ❌ 禁止 | 无法确认授权范围 |
@@ -30,6 +31,9 @@
 | `freezed_annotation` | 3.1.0 | MIT | 不可变数据模型注解 |
 | `intl` | 0.20.2 | BSD-3-Clause | 日期/数字格式化（由 gen-l10n 使用） |
 | `cupertino_icons` | 1.0.8 | MIT | iOS 风格图标（Flutter 模板自带） |
+| `enough_convert` | 1.7.1 | **MPL-2.0** | 纯 Dart 的 GBK 解码（ADR-0011）；不修改其源码 |
+| `file_picker` | 11.0.3 | MIT | 系统文件选择器（导入 TXT） |
+| `flutter_plugin_android_lifecycle` | 2.0.35 | BSD-3-Clause | `file_picker` 的 Android 传递依赖 |
 
 ## 构建/开发期依赖（不进入运行时产物）
 
@@ -80,7 +84,10 @@ unzip -l build/app/outputs/flutter-apk/app-release.apk | Select-String "lib/"
   但对外发布页仍需列出。
 - 本项目**没有**任何 GPL/AGPL 依赖；若未来某插件需要，只能以独立进程/可选下载方式提供，
   且不得进入主 AAB。
+- `enough_convert` 是 MPL-2.0：我们只在运行时调用它、不修改其文件。发布 AAB 时按 MPL 要求
+  提供其源码位置（pub.dev 页面 + `pubspec.lock` 里的版本与 sha256 已足以定位）。若将来要
+  patch 它，必须把改动后的文件单独以 MPL-2.0 发布，或换成本仓库自带的 GBK 映射表。
 
 ---
 
-最后更新：2026-10-31（对应 M0 骨架，`pubspec.lock` 解析结果）。
+最后更新：2026-10-31（M1 导入链路：新增 `enough_convert` / `file_picker`，对应 `pubspec.lock`）。

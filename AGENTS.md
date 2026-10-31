@@ -76,6 +76,9 @@ adb shell am start -n com.modooreader.modoo_reader/.MainActivity
 - 仓库统一 **LF** 行尾（`.gitattributes` 里 `* text=auto eol=lf`）。
 - 路径拼接用 `p.join` / `path` 包，不要手拼 `\`。
 - Golden 测试只在 Linux CI 生成与比对；**本地 Windows 跑 golden 会失败，这不是你的改动坏了**。
+- Android 侧固定 **AGP 8.13.1 + `android.builtInKotlin=false` + `kotlin.incremental=false`**：
+  AGP 9 的 built-in Kotlin 与 `file_picker` / `flutter_plugin_android_lifecycle` 组合跑不通。
+  升级 AGP 前先确认这两个插件已支持 built-in Kotlin，否则只会得到「插件类找不到」的编译错误。
 
 ---
 

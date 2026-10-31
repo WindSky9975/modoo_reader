@@ -35,6 +35,7 @@
 | [0008](0008-curl-page-turn-deferred.md) | 仿真翻页延后到 M6，且必须可降级 | 已接受 |
 | [0009](0009-riverpod-codegen.md) | Riverpod 锁 3.x，统一走 `@riverpod` 代码生成 | 已接受 |
 | [0010](0010-package-naming-prefix.md) | 包名统一 `modoo_` 前缀，插件 id 用 `modoo.<能力>.<名字>` | 已接受 |
+| [0011](0011-pure-dart-charsets.md) | 字符集解码用纯 Dart 的 `enough_convert`（MPL-2.0） | 已接受 |
 
 新增 ADR 时：复制 `template.md` → 改编号与标题 → 加进上表 → 在 PR 描述里说明「为什么需要一条新 ADR」。
 
