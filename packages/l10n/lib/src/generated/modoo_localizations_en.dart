@@ -80,7 +80,19 @@ class ModooLocalizationsEn extends ModooLocalizations {
   String get readerPageTurn => 'Page turn';
 
   @override
-  String get pageTurnSlide => 'Slide';
+  String get pageTurnSlide => 'Horizontal';
+
+  @override
+  String get pageTurnVertical => 'Vertical';
+
+  @override
+  String get pageTurnHorizontal => 'Horizontal';
+
+  @override
+  String get listen => 'Listen';
+
+  @override
+  String get listenComingSoon => 'Text to speech arrives with the plugin SDK (M4)';
 
   @override
   String get pageTurnNone => 'None';

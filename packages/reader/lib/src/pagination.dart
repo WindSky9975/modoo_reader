@@ -64,3 +64,18 @@ PageSpan? pageForOffset(List<PageSpan> pages, int charOffset) {
   if (pages.isEmpty) return null;
   return pages[pageIndexForOffset(pages, charOffset)];
 }
+
+/// Cache key for a page table: the layout spec plus the content box.
+///
+/// `LayoutSpec.layoutHash` only covers typography; the same chapter paginates
+/// differently at another width or height (rotation, splitting the window,
+/// hiding the chrome), so the cache row must be keyed on both or a stale table
+/// gets reused and pages render half empty.
+int pageCacheHash(LayoutSpec spec, {required double pageWidth, required double pageHeight}) {
+  int hash = spec.layoutHash;
+  for (final int value in <int>[pageWidth.round(), pageHeight.round()]) {
+    hash ^= value & 0xffffffff;
+    hash = (hash * 0x01000193) & 0xffffffff;
+  }
+  return hash;
+}

@@ -80,7 +80,19 @@ class ModooLocalizationsZh extends ModooLocalizations {
   String get readerPageTurn => '翻页';
 
   @override
-  String get pageTurnSlide => '滑动';
+  String get pageTurnSlide => '左右';
+
+  @override
+  String get pageTurnVertical => '上下';
+
+  @override
+  String get pageTurnHorizontal => '左右';
+
+  @override
+  String get listen => '听书';
+
+  @override
+  String get listenComingSoon => '听书将在 M4 插件 SDK 之后提供';
 
   @override
   String get pageTurnNone => '无动画';

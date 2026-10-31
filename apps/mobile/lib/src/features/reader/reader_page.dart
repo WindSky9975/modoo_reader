@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modoo_domain/modoo_domain.dart';
 import 'package:modoo_l10n/modoo_l10n.dart';
 import 'package:modoo_reader_engine/modoo_reader_engine.dart';
+import 'package:modoo_ui/modoo_ui.dart';
 
 import '../../providers/app_providers.dart';
 
@@ -47,6 +48,20 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   /// Whole book text; needed to slice the next chapter for prefetching.
   String _fullText = '';
+
+  /// Tomato-style immersive reading: the top and bottom chrome are hidden by
+  /// default and a tap in the middle of the page toggles them.
+  bool _chromeVisible = false;
+
+  /// Where the current tap started; used to tell taps from page swipes.
+  Offset? _tapOrigin;
+  static const double _tapSlop = 8;
+
+  /// Turns `pageTurnId` into the axis a page swipe moves along.
+  static Axis _axisFor(String pageTurnId) {
+    // Stored values predate the vertical mode: 'slide' meant horizontal.
+    return pageTurnId == 'vertical' ? Axis.vertical : Axis.horizontal;
+  }
 
   @override
   void initState() {
@@ -93,7 +108,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     required double height,
   }) async {
     final int token = ++_paginateToken;
-    final String key = '${chapter.index}|${spec.layoutHash}|${width.round()}|${height.round()}';
+    final int cacheHash = pageCacheHash(spec, pageWidth: width, pageHeight: height);
+    final String key = '${chapter.index}|$cacheHash';
     if (key == _cacheKey) return;
     _cacheKey = key;
     if (mounted) {
@@ -117,7 +133,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       final int target = anchor >= 0 ? pageIndexForOffset(pages, anchor - chapter.startOffset) : 0;
       setState(() {
         _pages = pages;
-        _layoutHash = spec.layoutHash;
+        _layoutHash = cacheHash;
         _contentSize = Size(width, height);
         _paginating = false;
         _pageIndex = target.clamp(0, math.max(0, pages.length - 1));
@@ -154,11 +170,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     double width,
     double height,
   ) async {
+    final int cacheHash = pageCacheHash(spec, pageWidth: width, pageHeight: height);
     final PageLayoutRepository cache = ref.read(pageLayoutRepositoryProvider);
     final CachedPageLayout? cached = await cache.read(
       bookId: widget.bookId,
       chapterIndex: chapter.index,
-      layoutHash: spec.layoutHash,
+      layoutHash: cacheHash,
     );
     if (cached != null && cached.pages.isNotEmpty) {
       return cached.pages
@@ -185,7 +202,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
             CachedPageLayout(
               bookId: widget.bookId,
               chapterIndex: chapter.index,
-              layoutHash: spec.layoutHash,
+              layoutHash: cacheHash,
               pages: pages
                   .map(
                     (PageSpan span) =>
@@ -490,57 +507,126 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_currentChapterTitle(context), maxLines: 1, overflow: TextOverflow.ellipsis),
-        actions: <Widget>[
-          IconButton(
-            tooltip: context.l10n.searchTitle,
-            onPressed: _fullText.isEmpty ? null : _openSearch,
-            icon: const Icon(Icons.search),
+      body: Stack(
+        // Everything lives in positioned children: with a loose Stack the body
+        // would be laid out against the top bar's height instead of the screen.
+        fit: StackFit.expand,
+        children: <Widget>[
+          Positioned.fill(child: body),
+          // Immersive chrome: hidden until the reader taps the middle.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 180),
+              offset: _chromeVisible ? Offset.zero : const Offset(0, -1),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: _chromeVisible ? 1 : 0,
+                child: IgnorePointer(ignoring: !_chromeVisible, child: _buildTopBar(context)),
+              ),
+            ),
           ),
-          IconButton(
-            tooltip: context.l10n.tocTitle,
-            onPressed: _chapters.isEmpty ? null : _openToc,
-            icon: const Icon(Icons.list),
-          ),
-          // Icon buttons crowd the chapter title out of the bar, so the
-          // secondary actions live in an overflow menu.
-          PopupMenuButton<void>(
-            tooltip: context.l10n.readerSettings,
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<void>>[
-              PopupMenuItem<void>(
-                enabled: _pages.isNotEmpty,
-                onTap: () => unawaited(_addBookmark()),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.bookmark_add_outlined),
-                  title: Text(context.l10n.addBookmark),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 180),
+              offset: _chromeVisible ? Offset.zero : const Offset(0, 1),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: _chromeVisible ? 1 : 0,
+                child: IgnorePointer(
+                  ignoring: !_chromeVisible,
+                  child: _chapters.isEmpty
+                      ? const SizedBox.shrink()
+                      : _buildReaderBottomBar(context),
                 ),
               ),
-              PopupMenuItem<void>(
-                onTap: _openBookmarks,
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.bookmarks_outlined),
-                  title: Text(context.l10n.bookmarksTitle),
-                ),
-              ),
-              PopupMenuItem<void>(
-                onTap: _openSettings,
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.format_size),
-                  title: Text(context.l10n.readerSettings),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
-      body: body,
-      bottomNavigationBar: _chapters.isEmpty ? null : _buildBottomBar(context),
     );
   }
+
+  Widget _buildTopBar(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final double progress = _readingProgress();
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        color: theme.scaffoldBackgroundColor,
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+        child: Row(
+          children: <Widget>[
+            IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: const Icon(Icons.arrow_back),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    _currentChapterTitle(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  Text(
+                    '${_chapterIndex + 1}/${_chapters.length} · ${(progress * 100).round()}%',
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: context.l10n.searchTitle,
+              onPressed: _fullText.isEmpty ? null : _openSearch,
+              icon: const Icon(Icons.search),
+            ),
+            PopupMenuButton<void>(
+              tooltip: context.l10n.readerSettings,
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<void>>[
+                PopupMenuItem<void>(
+                  enabled: _pages.isNotEmpty,
+                  onTap: () => unawaited(_addBookmark()),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.bookmark_add_outlined),
+                    title: Text(context.l10n.addBookmark),
+                  ),
+                ),
+                PopupMenuItem<void>(
+                  onTap: _openBookmarks,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.bookmarks_outlined),
+                    title: Text(context.l10n.bookmarksTitle),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Progress through the whole book, in `0..1`.
+  double _readingProgress() {
+    if (_chapters.isEmpty) return 0;
+    final double withinChapter = _pages.isEmpty ? 0 : _pageIndex / _pages.length;
+    final double value = (_chapterIndex + withinChapter) / _chapters.length;
+    return value.clamp(0, 1);
+  }
+
+  void _toggleChrome() => setState(() => _chromeVisible = !_chromeVisible);
 
   String _currentChapterTitle(BuildContext context) {
     if (_chapters.isEmpty) return context.l10n.appName;
@@ -575,7 +661,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         final double width = math.max(80, constraints.maxWidth - _horizontalPadding * 2);
         final double height = math.max(80, constraints.maxHeight - _verticalPadding * 2);
         final bool stale =
-            _pages.isEmpty || _layoutHash != spec.layoutHash || _contentSize != Size(width, height);
+            _pages.isEmpty ||
+            _layoutHash != pageCacheHash(spec, pageWidth: width, pageHeight: height) ||
+            _contentSize != Size(width, height);
         // Measuring has side effects (cache writes, setState), so it must not
         // run inside the layout/build phase: schedule it for after the frame.
         if (stale && !_paginating && !_paginateScheduled && _restored) {
@@ -618,9 +706,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           }
           return const Center(child: CircularProgressIndicator());
         }
+        final Axis axis = _axisFor(settings.pageTurnId);
         return Stack(
           children: <Widget>[
             PageView.builder(
+              key: ValueKey<Axis>(axis),
+              scrollDirection: axis,
               controller: _pageController,
               itemCount: _pages.length,
               onPageChanged: _onPageChanged,
@@ -628,16 +719,28 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 final PageSpan page = _pages[index];
                 final int from = (start + page.startOffset).clamp(0, end);
                 final int to = (start + page.endOffset).clamp(from, end);
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapUp: (TapUpDetails details) {
-                    final double x = details.localPosition.dx;
+                // `SelectionArea` inside competes for taps in the gesture
+                // arena, so taps are read at the pointer level and anything
+                // that moves more than [_tapSlop] is treated as a swipe.
+                return Listener(
+                  onPointerDown: (PointerDownEvent event) => _tapOrigin = event.localPosition,
+                  onPointerUp: (PointerUpEvent event) {
+                    final Offset? origin = _tapOrigin;
+                    _tapOrigin = null;
+                    if (origin == null) return;
+                    if ((event.localPosition - origin).distance > _tapSlop) return;
+                    final double x = event.localPosition.dx;
                     if (x < constraints.maxWidth * 0.3) {
                       _flip(-1);
                     } else if (x > constraints.maxWidth * 0.7) {
                       _flip(1);
+                    } else {
+                      // Middle tap toggles the immersive chrome, like the
+                      // reference reader does.
+                      _toggleChrome();
                     }
                   },
+                  onPointerCancel: (PointerCancelEvent event) => _tapOrigin = null,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: _horizontalPadding,
@@ -661,12 +764,21 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 );
               },
             ),
-            Positioned(
-              right: 12,
-              bottom: 4,
-              child: Text(
-                '${_pageIndex + 1} / ${_pages.length}',
-                style: Theme.of(context).textTheme.labelSmall,
+            // Hidden while the chrome is up: the bottom bar covers this corner.
+            IgnorePointer(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: _chromeVisible ? 0 : 1,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12, bottom: 4),
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      '${_pageIndex + 1} / ${_pages.length}',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -675,33 +787,90 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
   }
 
-  Widget _buildBottomBar(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
+  /// Bottom chrome: a scrubbable progress bar plus the four reader actions.
+  Widget _buildReaderBottomBar(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final double progress = _readingProgress();
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            TextButton(
-              onPressed: _chapterIndex > 0 ? () => _goToChapter(_chapterIndex - 1) : null,
-              child: Text(context.l10n.previousChapter),
-            ),
-            Expanded(
-              child: Text(
-                '${_chapterIndex + 1} / ${_chapters.length}',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    '${_chapterIndex + 1}/${_chapters.length}',
+                    style: theme.textTheme.labelSmall,
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: progress,
+                      onChanged: (double value) {
+                        final int target = (value * _chapters.length).floor().clamp(
+                          0,
+                          _chapters.length - 1,
+                        );
+                        if (target != _chapterIndex) _goToChapter(target);
+                      },
+                    ),
+                  ),
+                  Text('${(progress * 100).round()}%', style: theme.textTheme.labelSmall),
+                ],
               ),
             ),
-            TextButton(
-              onPressed: _chapterIndex < _chapters.length - 1
-                  ? () => _goToChapter(_chapterIndex + 1)
-                  : null,
-              child: Text(context.l10n.nextChapter),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  _ChromeAction(
+                    icon: Icons.menu_book_outlined,
+                    label: context.l10n.tocTitle,
+                    onTap: _openToc,
+                  ),
+                  _ChromeAction(
+                    icon: Icons.headphones_outlined,
+                    label: context.l10n.listen,
+                    onTap: () => ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(context.l10n.listenComingSoon))),
+                  ),
+                  _ChromeAction(
+                    icon: Icons.nightlight_outlined,
+                    label: context.l10n.settingsTheme,
+                    onTap: _cycleTheme,
+                  ),
+                  _ChromeAction(
+                    icon: Icons.text_fields,
+                    label: context.l10n.readerSettings,
+                    onTap: _openSettings,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Cycles paper → sepia → night → black, like the quick toggle in the
+  /// reference reader.
+  void _cycleTheme() {
+    const List<AppThemeVariant> order = <AppThemeVariant>[
+      AppThemeVariant.paper,
+      AppThemeVariant.sepia,
+      AppThemeVariant.night,
+      AppThemeVariant.amoled,
+    ];
+    final AppThemeVariant current = ref.read(appThemeProvider);
+    final int index = order.indexOf(current);
+    final AppThemeVariant next = order[(index + 1) % order.length];
+    ref.read(readerSettingsControllerProvider.notifier).setThemeId(next.name);
   }
 
   void _openToc() {
@@ -779,6 +948,24 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       onChanged: controller.setLineHeight,
                     ),
                     const SizedBox(height: 8),
+                    Text(context.l10n.settingsTheme, style: Theme.of(context).textTheme.labelLarge),
+                    const SizedBox(height: 8),
+                    // Background swatches, the way the reference reader offers
+                    // its paper colours.
+                    Row(
+                      children: <Widget>[
+                        for (final AppThemeVariant variant in AppThemeVariant.values)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: _ThemeSwatch(
+                              variant: variant,
+                              selected: settings.themeId == variant.name,
+                              onTap: () => controller.setThemeId(variant.name),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       context.l10n.readerPageTurn,
                       style: Theme.of(context).textTheme.labelLarge,
@@ -787,8 +974,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                     SegmentedButton<String>(
                       segments: <ButtonSegment<String>>[
                         ButtonSegment<String>(
+                          value: 'vertical',
+                          label: Text(context.l10n.pageTurnVertical),
+                        ),
+                        ButtonSegment<String>(
                           value: 'slide',
-                          label: Text(context.l10n.pageTurnSlide),
+                          label: Text(context.l10n.pageTurnHorizontal),
                         ),
                         ButtonSegment<String>(
                           value: 'none',
@@ -806,6 +997,67 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           },
         );
       },
+    );
+  }
+}
+
+/// A round background swatch in the typography sheet.
+class _ThemeSwatch extends StatelessWidget {
+  const _ThemeSwatch({required this.variant, required this.selected, required this.onTap});
+
+  final AppThemeVariant variant;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppPalette palette = AppPalette.of(variant);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: palette.background,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: selected ? Theme.of(context).colorScheme.primary : palette.divider,
+            width: selected ? 2.5 : 1,
+          ),
+        ),
+        child: Text('A', style: TextStyle(color: palette.foreground, fontSize: 16)),
+      ),
+    );
+  }
+}
+
+/// One labelled action in the reader's bottom chrome.
+class _ChromeAction extends StatelessWidget {
+  const _ChromeAction({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(icon, size: 22),
+            const SizedBox(height: 2),
+            Text(label, style: theme.textTheme.labelSmall),
+          ],
+        ),
+      ),
     );
   }
 }

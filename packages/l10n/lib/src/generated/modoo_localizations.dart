@@ -223,8 +223,32 @@ abstract class ModooLocalizations {
   /// Page turn mode: animated horizontal slide.
   ///
   /// In zh, this message translates to:
-  /// **'滑动'**
+  /// **'左右'**
   String get pageTurnSlide;
+
+  /// Page turn mode: animated vertical slide.
+  ///
+  /// In zh, this message translates to:
+  /// **'上下'**
+  String get pageTurnVertical;
+
+  /// Page turn mode: animated horizontal slide.
+  ///
+  /// In zh, this message translates to:
+  /// **'左右'**
+  String get pageTurnHorizontal;
+
+  /// Label of the text-to-speech action in the reader.
+  ///
+  /// In zh, this message translates to:
+  /// **'听书'**
+  String get listen;
+
+  /// Shown when text-to-speech is not available yet.
+  ///
+  /// In zh, this message translates to:
+  /// **'听书将在 M4 插件 SDK 之后提供'**
+  String get listenComingSoon;
 
   /// Page turn mode: jump straight to the next page.
   ///

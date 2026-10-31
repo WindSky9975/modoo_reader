@@ -102,9 +102,25 @@
   "@readerPageTurn": {
     "description": "Label of the page turn mode selector."
   },
-  "pageTurnSlide": "滑动",
+  "pageTurnSlide": "左右",
   "@pageTurnSlide": {
     "description": "Page turn mode: animated horizontal slide."
+  },
+  "pageTurnVertical": "上下",
+  "@pageTurnVertical": {
+    "description": "Page turn mode: animated vertical slide."
+  },
+  "pageTurnHorizontal": "左右",
+  "@pageTurnHorizontal": {
+    "description": "Page turn mode: animated horizontal slide."
+  },
+  "listen": "听书",
+  "@listen": {
+    "description": "Label of the text-to-speech action in the reader."
+  },
+  "listenComingSoon": "听书将在 M4 插件 SDK 之后提供",
+  "@listenComingSoon": {
+    "description": "Shown when text-to-speech is not available yet."
   },
   "pageTurnNone": "无动画",
   "@pageTurnNone": {
