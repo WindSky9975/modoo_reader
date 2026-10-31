@@ -46,6 +46,10 @@ dependencies:
   # declared here so the app package resolves.
   modoo_format_epub:
     path: ../../plugins/format_epub
+  modoo_format_html:
+    path: ../../plugins/format_html
+  modoo_format_markdown:
+    path: ../../plugins/format_markdown
   modoo_format_txt:
     path: ../../plugins/format_txt
 

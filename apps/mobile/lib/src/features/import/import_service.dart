@@ -89,8 +89,12 @@ final class ImportService {
       final ImportResult result = await parser.import(handle, sink);
       onProgress?.call(0.85);
 
-      if (parser.handlesBinaryContainers) {
-        // The plugin produced the text; that text is the library copy.
+      if (parser.handlesBinaryContainers || parser.rewritesContent) {
+        // The plugin produced the text; that text is the library copy. The
+        // transcoded source the parser read is only a scratch file.
+        if (copy != null) {
+          await _deleteQuietly(copy);
+        }
         copy = await _writeUtf8Copy(source, sink.takeText());
       }
       final File library = copy!;

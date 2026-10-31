@@ -34,6 +34,9 @@ final class EpubFormatParser implements BookFormatParser {
   bool get handlesBinaryContainers => true;
 
   @override
+  bool get rewritesContent => true;
+
+  @override
   Future<ProbeResult> probe(FileHandle file) async {
     final Uint8List head = await _readHead(file, 512);
     if (head.length < 4 || head[0] != 0x50 || head[1] != 0x4b) {

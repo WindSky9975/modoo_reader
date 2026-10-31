@@ -226,6 +226,9 @@ final class _FakeContainerParser implements BookFormatParser {
   bool get handlesBinaryContainers => true;
 
   @override
+  bool get rewritesContent => true;
+
+  @override
   Future<ProbeResult> probe(FileHandle file) async => const ProbeResult(supported: true);
 
   @override
@@ -255,6 +258,9 @@ final class _FakeParser implements BookFormatParser {
 
   @override
   bool get handlesBinaryContainers => false;
+
+  @override
+  bool get rewritesContent => false;
 
   @override
   Future<ProbeResult> probe(FileHandle file) async => supported

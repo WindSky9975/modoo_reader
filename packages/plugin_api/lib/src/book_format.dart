@@ -19,6 +19,14 @@ abstract interface class BookFormatParser {
   /// text out of them, and it must emit that text through [ImportSink.addText].
   bool get handlesBinaryContainers => false;
 
+  /// True when the text this parser emits differs from the file on disk.
+  ///
+  /// Markdown and HTML are readable, so the importer still transcodes them to
+  /// UTF-8 first (and detects their encoding on the way), but the chapter text
+  /// is markup-free: it is what the parser sends through [ImportSink.addText],
+  /// and that is what the importer stores as the library copy.
+  bool get rewritesContent => false;
+
   /// Cheap check: does this file belong to me? Must not throw for garbage.
   Future<ProbeResult> probe(FileHandle file);
 

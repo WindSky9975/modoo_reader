@@ -12,6 +12,16 @@
 
 ### Added
 
+- **Markdown / HTML 导入（P1）**：
+  - 两个新插件 `plugins/format_markdown`、`plugins/format_html`。Markdown 的 ATX 标题（`#`/`##`）
+    变成章节；HTML 的 `h1`/`h2` 变成章节；两者都拿不到标题时退回中文「第 N 章 / 第 N 节」正则，
+    再不行就整篇当一章。
+  - 正文会被**重写成纯文本**再入库：行内标记（`**`、`` ` ``、链接、图片、引用、列表符号、
+    `<script>`/`<style>`/`<nav>` 等）全部剥掉。因此库文件与 TXT 走的还是同一条阅读链路，字符偏移、
+    书签、批注、搜索、分页缓存都不受影响。
+  - 解析器契约再加一个加法成员 `BookFormatParser.rewritesContent`：可读但需要重写正文的格式
+    （Markdown/HTML）仍由宿主先做编码嗅探与 UTF-8 转码，再由插件给出正文。
+  - Markdown 文档开头的单个 `#` 标题当作书名；HTML 用 `<title>` 作为书名。
 - **EPUB 导入（P0）**：
   - 新增第一个**容器格式插件** `plugins/format_epub`：用 `archive` 解压、`html` 解析 XHTML，
     按 OPF 的 spine 顺序抽正文，标题优先取 EPUB3 nav，其次 NCX，最后退回文档首个 `h1/h2/h3/title`。
