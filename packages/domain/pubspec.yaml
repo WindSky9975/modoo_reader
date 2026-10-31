@@ -1,0 +1,21 @@
+﻿name: modoo_domain
+description: "Entities and repository contracts. No Flutter, no storage details."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+resolution: workspace
+
+dependencies:
+  freezed_annotation: ^3.1.0
+  modoo_core:
+    path: ../core
+
+dev_dependencies:
+  build_runner: ^2.15.0
+  flutter_lints: ^6.0.0
+  freezed: ^3.2.5
+  test: ^1.25.0
+

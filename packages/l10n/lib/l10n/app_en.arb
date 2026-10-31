@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "appName": "Modoo",
+  "bookshelfTitle": "Shelf",
+  "bookshelfEmptyTitle": "No books yet",
+  "bookshelfEmptyMessage": "Import a TXT or EPUB file to start reading.",
+  "importBook": "Import book",
+  "settingsTitle": "Settings",
+  "settingsTheme": "Theme",
+  "themeSystem": "Follow system",
+  "themePaper": "Paper",
+  "themeSepia": "Sepia",
+  "themeNight": "Night",
+  "themeAmoled": "Black",
+  "importComingSoon": "File import arrives in milestone M1.",
+  "retry": "Retry",
+  "errorGeneric": "Something went wrong"
+}

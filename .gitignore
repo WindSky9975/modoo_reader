@@ -9,8 +9,8 @@ build/
 *.lock.bak
 pubspec.lock.bak
 
-# melos 局部覆盖（含个人路径，别提交）
-melos_*.yaml
+# ---- 本仓临时草稿（探针、一次性脚本） ----
+.tmp/
 
 # ---- IDE / 工具 ----
 .idea/

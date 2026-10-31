@@ -1,0 +1,26 @@
+name: modoo_l10n
+description: "Generated localizations. Chinese is the template, English keeps parity."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  # Required by `flutter gen-l10n`; the generated sources are committed under
+  # lib/src/generated (CODE_STYLE §6.3).
+  generate: true

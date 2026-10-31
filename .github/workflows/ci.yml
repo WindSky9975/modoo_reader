@@ -1,0 +1,40 @@
+﻿name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.4
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate code
+        run: dart run tool/tasks.dart gen
+
+      - name: Check generated code is committed
+        run: git diff --exit-code
+
+      - name: Format
+        run: dart run tool/tasks.dart format:check
+
+      - name: Analyze
+        run: dart run tool/tasks.dart analyze
+
+      - name: Test
+        run: dart run tool/tasks.dart test

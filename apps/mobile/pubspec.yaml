@@ -1,0 +1,51 @@
+name: modoo_reader
+description: "A local-first open-source novel reader."
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  flutter_riverpod: ^3.3.1
+  riverpod_annotation: ^4.0.2
+  path: ^1.9.0
+  path_provider: ^2.1.5
+  sqlite3_flutter_libs: ^0.5.24
+
+  modoo_core:
+    path: ../../packages/core
+  modoo_data:
+    path: ../../packages/data
+  modoo_domain:
+    path: ../../packages/domain
+  modoo_l10n:
+    path: ../../packages/l10n
+  modoo_plugin_api:
+    path: ../../packages/plugin_api
+  modoo_plugin_host:
+    path: ../../packages/plugin_host
+  modoo_reader_engine:
+    path: ../../packages/reader
+  modoo_ui:
+    path: ../../packages/ui
+
+dev_dependencies:
+  build_runner: ^2.15.0
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  # Upper bound is deliberate: riverpod_generator >=4.0.9 needs analyzer 13+,
+  # which freezed 3.2.5 cannot use (analyzer <11). Revisit when freezed 4 is
+  # stable, in one PR that moves both generators together.
+  riverpod_generator: '>=4.0.3 <4.0.9'
+
+flutter:
+  uses-material-design: true

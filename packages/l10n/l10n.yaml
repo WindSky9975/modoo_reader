@@ -1,0 +1,7 @@
+﻿arb-dir: lib/l10n
+template-arb-file: app_zh.arb
+output-localization-file: modoo_localizations.dart
+output-class: ModooLocalizations
+output-dir: lib/src/generated
+nullable-getter: false
+header: "// GENERATED CODE - DO NOT MODIFY BY HAND. Run: melos run gen:l10n"

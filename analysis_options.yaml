@@ -1,0 +1,50 @@
+﻿# Single analyzer configuration for the whole workspace.
+# Every package inherits it by walking up to this file; do not add per-package
+# copies. See docs/CODE_STYLE.md §17 (Appendix A).
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # Repository-wide single exemption: freezed/json_serializable put @JsonKey
+    # on constructor parameters, which is an upstream false positive
+    # (dart-lang/language#1515). See AGENTS.md hard rule 5.
+    invalid_annotation_target: ignore
+    missing_required_param: error
+    missing_return: error
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.gr.dart"
+    - "**/generated/**"
+    - "**/.dart_tool/**"
+    - "build/**"
+
+formatter:
+  page_width: 100
+
+linter:
+  rules:
+    # Types & safety
+    always_declare_return_types: true
+    avoid_dynamic_calls: true
+    avoid_catches_without_on_clauses: true
+    only_throw_errors: true
+    # Async
+    unawaited_futures: true
+    discarded_futures: true
+    # Style
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    directives_ordering: true
+    sort_constructors_first: true
+    prefer_final_locals: true
+    use_super_parameters: true
+    # Quality
+    avoid_print: true
+    depend_on_referenced_packages: true
+    unnecessary_lambdas: true
+    avoid_redundant_argument_values: true

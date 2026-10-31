@@ -1,0 +1,143 @@
+/// Turns a file into chapters and text.
+///
+/// Implementations must be pure Dart (runnable in a background isolate), must
+/// not touch the UI and must honour cooperative cancellation through
+/// [ImportSink.isCancelled] at least once per chunk (CODE_STYLE §9.3).
+abstract interface class BookFormatParser {
+  /// Stable identifier, also stored in the database: `txt`, `epub`, `cbz`.
+  String get formatId;
+
+  /// Lower-case extensions including the dot, e.g. `{'.txt'}`.
+  Set<String> get extensions;
+
+  /// Cheap check: does this file belong to me? Must not throw for garbage.
+  Future<ProbeResult> probe(FileHandle file);
+
+  /// Full parse. Progress is reported through [sink], never by writing to disk.
+  Future<ImportResult> import(FileHandle file, ImportSink sink);
+
+  /// Loads one chapter's text, for reading and re-pagination.
+  Future<ChapterDoc> loadChapter(FileHandle file, ChapterRef chapter);
+}
+
+/// Opaque access to a book file.
+///
+/// Deliberately exposes no absolute path: plugins must not learn where the
+/// user keeps their library (CODE_STYLE §12.4).
+abstract interface class FileHandle {
+  /// File name for display and diagnostics, not a path.
+  String get displayName;
+
+  /// Size in bytes.
+  Future<int> length();
+
+  /// Streaming read. Never load a whole book into memory.
+  Stream<List<int>> openRead();
+}
+
+/// Answer to [BookFormatParser.probe].
+final class ProbeResult {
+  const ProbeResult({
+    required this.supported,
+    this.confidence = 1.0,
+    this.detectedEncoding,
+    this.reason,
+  });
+
+  const ProbeResult.unsupported(String this.reason)
+    : supported = false,
+      confidence = 0,
+      detectedEncoding = null;
+
+  final bool supported;
+
+  /// 0..1; lets the host pick the best of several matching parsers.
+  final double confidence;
+
+  /// Encoding guessed while probing, if any.
+  final String? detectedEncoding;
+
+  /// Why the file was rejected. Log-safe, no user content.
+  final String? reason;
+}
+
+/// Streaming progress sink handed to [BookFormatParser.import].
+abstract interface class ImportSink {
+  /// True once the user cancelled; long loops must check this.
+  bool get isCancelled;
+
+  /// Reports overall progress in 0..1. [detail] is a log-safe stage name.
+  void reportProgress(double fraction, {String? detail});
+
+  /// Emits one chapter as soon as it is known, so the shelf can show progress.
+  void addChapter(ChapterMeta meta);
+}
+
+/// Result of a completed import.
+final class ImportResult {
+  const ImportResult({
+    required this.chapterCount,
+    required this.wordCount,
+    this.encoding,
+    this.warnings = const <String>[],
+  });
+
+  final int chapterCount;
+  final int wordCount;
+
+  /// Encoding actually used to decode, e.g. `utf-8`, `gb18030`.
+  final String? encoding;
+
+  /// Non-fatal problems worth surfacing in the import summary.
+  final List<String> warnings;
+}
+
+/// One chapter discovered during import.
+final class ChapterMeta {
+  const ChapterMeta({
+    required this.index,
+    required this.title,
+    required this.startOffset,
+    required this.endOffset,
+    required this.wordCount,
+  });
+
+  final int index;
+  final String title;
+
+  /// Character offsets into the decoded text: the single source of truth.
+  final int startOffset;
+  final int endOffset;
+
+  final int wordCount;
+}
+
+/// Reference to a chapter already stored by the host.
+final class ChapterRef {
+  const ChapterRef({
+    required this.index,
+    required this.title,
+    this.startOffset,
+    this.endOffset,
+    this.href,
+  });
+
+  final int index;
+  final String title;
+
+  /// Character offsets (TXT).
+  final int? startOffset;
+  final int? endOffset;
+
+  /// Document path inside the container (EPUB spine item).
+  final String? href;
+}
+
+/// A chapter's text, ready to be laid out.
+final class ChapterDoc {
+  const ChapterDoc({required this.text, this.title, this.encoding});
+
+  final String text;
+  final String? title;
+  final String? encoding;
+}

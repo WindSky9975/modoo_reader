@@ -1,0 +1,19 @@
+﻿name: modoo_sync
+description: "WebDAV progress sync: path layout and conflict resolution (M5)."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+resolution: workspace
+
+dependencies:
+  modoo_core:
+    path: ../core
+  modoo_plugin_api:
+    path: ../plugin_api
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  test: ^1.25.0

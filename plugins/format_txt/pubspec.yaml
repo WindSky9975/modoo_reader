@@ -1,0 +1,17 @@
+﻿name: modoo_format_txt
+description: "Plain-text book parser: UTF-8 chapter detection and streaming import."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+resolution: workspace
+
+dependencies:
+  modoo_plugin_api:
+    path: ../../packages/plugin_api
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  test: ^1.25.0

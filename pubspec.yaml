@@ -1,0 +1,29 @@
+name: modoo_reader_workspace
+description: Workspace root of the modoo_reader monorepo. Not published.
+publish_to: none
+
+environment:
+  # 3.11 is the first language version that accepts globs in `workspace:`.
+  sdk: ^3.11.0
+
+# Pub workspace (Dart 3.11+ globs): one resolution, one lockfile, one
+# `flutter pub get` at the repository root. Members opt in with
+# `resolution: workspace`.
+workspace:
+  - apps/*
+  - packages/*
+  - plugins/*
+
+dev_dependencies:
+  path: ^1.9.0
+  yaml: ^3.1.2
+
+# Native asset hooks. `sqlite3` normally downloads a prebuilt binary from a
+# GitHub release, which is not reachable from this environment, so tests and
+# desktop builds load the SQLite shared library provided by the host instead.
+# On Windows the DLL must be on PATH (or named through `name`).
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+      name: sqlite3

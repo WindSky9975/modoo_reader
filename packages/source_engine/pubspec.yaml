@@ -1,0 +1,19 @@
+﻿name: modoo_source_engine
+description: "Book source rule DSL, selector evaluation and the fetch sandbox (M4)."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+resolution: workspace
+
+dependencies:
+  modoo_core:
+    path: ../core
+  modoo_plugin_api:
+    path: ../plugin_api
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  test: ^1.25.0

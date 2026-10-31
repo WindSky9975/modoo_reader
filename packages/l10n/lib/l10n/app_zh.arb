@@ -1,0 +1,63 @@
+{
+  "@@locale": "zh",
+  "appName": "墨读",
+  "@appName": {
+    "description": "Product name shown on the launcher and about page."
+  },
+  "bookshelfTitle": "书架",
+  "@bookshelfTitle": {
+    "description": "Title of the shelf tab."
+  },
+  "bookshelfEmptyTitle": "还没有书",
+  "@bookshelfEmptyTitle": {
+    "description": "Empty shelf headline."
+  },
+  "bookshelfEmptyMessage": "导入一个 TXT 或 EPUB 文件开始阅读。",
+  "@bookshelfEmptyMessage": {
+    "description": "Empty shelf explanation."
+  },
+  "importBook": "导入书籍",
+  "@importBook": {
+    "description": "Button that opens the file picker."
+  },
+  "settingsTitle": "设置",
+  "@settingsTitle": {
+    "description": "Title of the settings tab."
+  },
+  "settingsTheme": "主题",
+  "@settingsTheme": {
+    "description": "Label of the theme selector."
+  },
+  "themeSystem": "跟随系统",
+  "@themeSystem": {
+    "description": "Theme option: follow the platform setting."
+  },
+  "themePaper": "纸白",
+  "@themePaper": {
+    "description": "Theme option: white paper."
+  },
+  "themeSepia": "米黄",
+  "@themeSepia": {
+    "description": "Theme option: sepia."
+  },
+  "themeNight": "夜间",
+  "@themeNight": {
+    "description": "Theme option: dark."
+  },
+  "themeAmoled": "纯黑",
+  "@themeAmoled": {
+    "description": "Theme option: black background for OLED screens."
+  },
+  "importComingSoon": "文件导入将在 M1 里程碑提供。",
+  "@importComingSoon": {
+    "description": "Shown when the import button is tapped before M1 ships."
+  },
+  "retry": "重试",
+  "@retry": {
+    "description": "Generic retry button."
+  },
+  "errorGeneric": "出了点问题",
+  "@errorGeneric": {
+    "description": "Generic error headline; details stay in the log."
+  }
+}
