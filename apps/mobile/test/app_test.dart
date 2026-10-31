@@ -69,10 +69,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('A Test Book'), findsOneWidget);
-    expect(find.text('TXT'), findsOneWidget);
-    expect(find.text('3 chapters'), findsOneWidget);
+    expect(find.text('TXT · 3 chapters'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.longPress(find.text('A Test Book'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();

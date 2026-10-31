@@ -62,43 +62,30 @@ class BookshelfPage extends ConsumerWidget {
             ),
           );
         }
-        return ListView.separated(
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.xxl * 2,
+          ),
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 160,
+            mainAxisSpacing: AppSpacing.xl,
+            crossAxisSpacing: AppSpacing.md,
+            childAspectRatio: 0.58,
+          ),
           itemCount: items.length,
-          separatorBuilder: (BuildContext context, int index) => const Divider(height: 1),
           itemBuilder: (BuildContext context, int index) {
             final Book book = items[index];
-            return ListTile(
-              leading: const Icon(Icons.menu_book_outlined),
-              title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text(
-                book.author ?? book.formatId.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    context.l10n.chaptersCount(book.chapterCount),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (String value) {
-                      if (value == 'delete') {
-                        _delete(context, ref, book);
-                      }
-                    },
-                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                      PopupMenuItem<String>(value: 'delete', child: Text(context.l10n.delete)),
-                    ],
-                  ),
-                ],
-              ),
-              onTap: () => Navigator.of(context).push(
+            return _BookTile(
+              book: book,
+              onOpen: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (BuildContext context) => ReaderPage(bookId: book.id),
                 ),
               ),
+              onDelete: () => _delete(context, ref, book),
             );
           },
         );
@@ -175,6 +162,156 @@ class BookshelfPage extends ConsumerWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+/// A shelf tile: a generated cover, the title, and how far the reader got.
+///
+/// There is no cover image in the database yet (the importer does not extract
+/// one), so the cover is drawn from the title: a stable gradient per book plus
+/// the first character. Swapping in a real cover later only touches this widget.
+final class _BookTile extends ConsumerWidget {
+  const _BookTile({required this.book, required this.onOpen, required this.onDelete});
+
+  final Book book;
+  final VoidCallback onOpen;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AsyncValue<ReadingProgress?> progress = ref.watch(readingProgressProvider(book.id));
+    final double fraction = switch (progress.value) {
+      null => 0,
+      final ReadingProgress value when book.chapterCount > 0 =>
+        ((value.chapterIndex + 1) / book.chapterCount).clamp(0.0, 1.0),
+      _ => 0,
+    };
+    final bool started = progress.value != null;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      onTap: onOpen,
+      onLongPress: () => _showActions(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  _BookCover(title: book.title),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: LinearProgressIndicator(
+                      value: fraction,
+                      minHeight: 3,
+                      backgroundColor: Colors.black12,
+                    ),
+                  ),
+                  if (started)
+                    Positioned(
+                      right: AppSpacing.sm,
+                      bottom: AppSpacing.sm,
+                      child: Text(
+                        '${progress.value!.chapterIndex + 1}/${book.chapterCount}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          shadows: const <Shadow>[Shadow(blurRadius: 4, color: Colors.black54)],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            book.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${book.formatId.toUpperCase()} · ${context.l10n.chaptersCount(book.chapterCount)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActions(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: Text(context.l10n.delete),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                onDelete();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Deterministic placeholder cover: same title always gets the same colours.
+final class _BookCover extends StatelessWidget {
+  const _BookCover({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    // `String.hashCode` is not stable across runs on all platforms, so the hue
+    // is derived from the code units instead: the same title always gets the
+    // same cover, and neighbouring titles do not collide.
+    final int seed = title.codeUnits.fold<int>(
+      7,
+      (int acc, int unit) => (acc * 31 + unit) & 0x3fffffff,
+    );
+    final HSLColor base = HSLColor.fromAHSL(1, (seed % 360).toDouble(), 0.32, 0.72);
+    final Color top = base.withLightness(0.78).toColor();
+    final Color bottom = base.withLightness(0.52).toColor();
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[top, bottom],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: Text(
+            title.characters.isEmpty ? '?' : title.characters.first,
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
