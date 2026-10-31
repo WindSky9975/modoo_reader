@@ -44,6 +44,8 @@ dependencies:
   # Plugins are pulled in through the generated registry (registry.g.dart), the
   # only file allowed to import them (CODE_STYLE §3.3). The dependency is still
   # declared here so the app package resolves.
+  modoo_format_epub:
+    path: ../../plugins/format_epub
   modoo_format_txt:
     path: ../../plugins/format_txt
 

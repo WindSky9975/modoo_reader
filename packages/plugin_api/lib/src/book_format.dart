@@ -10,6 +10,15 @@ abstract interface class BookFormatParser {
   /// Lower-case extensions including the dot, e.g. `{'.txt'}`.
   Set<String> get extensions;
 
+  /// True when the file is a container (ZIP, database, image bundle) rather
+  /// than readable text.
+  ///
+  /// The importer transcodes plain-text files to UTF-8 before probing them, so
+  /// a `.txt` book in GBK still reaches its parser as clean UTF-8. Container
+  /// formats get the original bytes instead: only the plugin knows how to pull
+  /// text out of them, and it must emit that text through [ImportSink.addText].
+  bool get handlesBinaryContainers => false;
+
   /// Cheap check: does this file belong to me? Must not throw for garbage.
   Future<ProbeResult> probe(FileHandle file);
 
@@ -71,6 +80,14 @@ abstract interface class ImportSink {
 
   /// Emits one chapter as soon as it is known, so the shelf can show progress.
   void addChapter(ChapterMeta meta);
+
+  /// Appends decoded text to the book's canonical text.
+  ///
+  /// Only needed by container formats, which have no text file to hand over.
+  /// The host writes the concatenation to the library and reads it back later,
+  /// so [ChapterMeta.startOffset] and [ChapterMeta.endOffset] must index
+  /// exactly what [addText] produced, in call order.
+  void addText(String text);
 }
 
 /// Result of a completed import.
@@ -78,12 +95,17 @@ final class ImportResult {
   const ImportResult({
     required this.chapterCount,
     required this.wordCount,
+    this.title,
     this.encoding,
     this.warnings = const <String>[],
   });
 
   final int chapterCount;
   final int wordCount;
+
+  /// Title from the file's metadata, when it has any; the host falls back to
+  /// the file name.
+  final String? title;
 
   /// Encoding actually used to decode, e.g. `utf-8`, `gb18030`.
   final String? encoding;

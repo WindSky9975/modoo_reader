@@ -31,6 +31,9 @@ final class TxtFormatParser implements BookFormatParser {
   Set<String> get extensions => const <String>{'.txt'};
 
   @override
+  bool get handlesBinaryContainers => false;
+
+  @override
   Future<ProbeResult> probe(FileHandle file) async {
     final head = await _readHead(file, probeBytes);
     if (head.isEmpty) {

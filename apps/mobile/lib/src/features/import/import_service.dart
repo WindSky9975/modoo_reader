@@ -18,17 +18,16 @@ final class ImportOutcome {
 
 /// Turns one picked file into a shelf row plus its chapters.
 ///
-/// The pipeline is deliberately boring and repeatable:
+/// Two paths, one invariant: after a successful import the library holds a
+/// UTF-8 text file whose character offsets match the stored chapters.
 ///
-/// 1. read the bytes once, detect the encoding;
-/// 2. transcode to UTF-8 and write our own copy into the library folder, so
-///    the rest of the app (reader, plugins, future sync) only ever deals with
-///    UTF-8 and character offsets keep matching the file on disk;
-/// 3. let the format plugin parse the copy and report chapters;
-/// 4. insert the book, then replace all chapters in one transaction.
+/// * Text formats (TXT): read the bytes, detect the encoding, transcode to
+///   UTF-8, write our own copy, then let the plugin parse the copy.
+/// * Container formats (EPUB): hand the original bytes to the plugin, which
+///   emits text through [ImportSink.addText]; we write that text as the copy.
 ///
-/// Any failure after step 2 deletes the copy: a half-imported file must never
-/// be visible on the shelf.
+/// Any failure after the copy exists deletes it: a half-imported file must
+/// never be visible on the shelf.
 final class ImportService {
   ImportService({
     required this.registry,
@@ -43,7 +42,8 @@ final class ImportService {
   final Directory libraryDirectory;
 
   /// Extensions the shelf accepts today; grows with the plugin set.
-  static const Set<String> supportedExtensions = <String>{'.txt'};
+  Set<String> get supportedExtensions =>
+      registry.formatParsers.expand((BookFormatParser parser) => parser.extensions).toSet();
 
   /// Imports [sourcePath]; [onProgress] receives 0..1.
   Future<ImportOutcome> importFile({
@@ -58,15 +58,23 @@ final class ImportService {
 
     final File source = File(sourcePath);
     final Uint8List raw = await source.readAsBytes();
-    final EncodingGuess guess = detectEncoding(raw);
     onProgress?.call(0.05);
 
-    final String text = decodeText(raw, guess.encoding);
-    onProgress?.call(0.2);
+    // A container goes to the plugin untouched; a text file is transcoded
+    // first, so legacy encodings reach the parser as clean UTF-8.
+    File? copy;
+    FileHandle handle;
+    if (parser.handlesBinaryContainers) {
+      handle = _PathFileHandle(source.path, p.basename(source.path));
+    } else {
+      final EncodingGuess guess = detectEncoding(raw);
+      final String text = decodeText(raw, guess.encoding);
+      onProgress?.call(0.2);
+      copy = await _writeUtf8Copy(source, text);
+      handle = _PathFileHandle(copy.path, p.basename(copy.path));
+    }
 
-    final File copy = await _writeUtf8Copy(source, text);
     try {
-      final _PathFileHandle handle = _PathFileHandle(copy.path, p.basename(copy.path));
       final ProbeResult probe = await parser.probe(handle);
       if (!probe.supported) {
         throw UnsupportedFormatException(
@@ -81,13 +89,21 @@ final class ImportService {
       final ImportResult result = await parser.import(handle, sink);
       onProgress?.call(0.85);
 
+      if (parser.handlesBinaryContainers) {
+        // The plugin produced the text; that text is the library copy.
+        copy = await _writeUtf8Copy(source, sink.takeText());
+      }
+      final File library = copy!;
+
       final DateTime now = DateTime.now().toUtc();
       final int bookId = await books.insert(
         Book(
           id: 0,
-          title: _titleFor(sourcePath),
+          title: result.title?.trim().isNotEmpty ?? false
+              ? result.title!.trim()
+              : _titleFor(sourcePath),
           formatId: parser.formatId,
-          filePath: copy.path,
+          filePath: library.path,
           fileSizeBytes: raw.length,
           addedAt: now,
           encoding: 'utf-8',
@@ -119,7 +135,9 @@ final class ImportService {
       }
       return ImportOutcome(book: stored, chapterCount: result.chapterCount);
     } on Object {
-      await _deleteQuietly(copy);
+      if (copy != null) {
+        await _deleteQuietly(copy);
+      }
       rethrow;
     }
   }
@@ -154,6 +172,7 @@ final class _CollectingSink implements ImportSink {
 
   final void Function(double fraction) onProgress;
   final List<ChapterMeta> chapters = <ChapterMeta>[];
+  final StringBuffer _text = StringBuffer();
 
   @override
   bool get isCancelled => false;
@@ -163,6 +182,17 @@ final class _CollectingSink implements ImportSink {
 
   @override
   void addChapter(ChapterMeta meta) => chapters.add(meta);
+
+  @override
+  void addText(String text) => _text.write(text);
+
+  /// Hands the accumulated text over and clears the buffer, so a retry cannot
+  /// write the same book twice.
+  String takeText() {
+    final String text = _text.toString();
+    _text.clear();
+    return text;
+  }
 }
 
 /// Minimal [FileHandle] over a path we own.

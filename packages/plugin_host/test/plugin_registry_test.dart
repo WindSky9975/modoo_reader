@@ -121,6 +121,9 @@ final class _FakeParser implements BookFormatParser {
   Set<String> get extensions => <String>{extension};
 
   @override
+  bool get handlesBinaryContainers => false;
+
+  @override
   Future<ProbeResult> probe(FileHandle file) async => const ProbeResult(supported: true);
 
   @override

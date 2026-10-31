@@ -7,7 +7,11 @@
 library;
 
 import 'package:modoo_plugin_api/modoo_plugin_api.dart';
+import 'package:modoo_format_epub/modoo_format_epub.dart' as modoo_format_epub;
 import 'package:modoo_format_txt/modoo_format_txt.dart' as modoo_format_txt;
 
 /// Plugins compiled into this build, in registration order.
-List<ModooPlugin> buildPluginList() => <ModooPlugin>[modoo_format_txt.createPlugin()];
+List<ModooPlugin> buildPluginList() => <ModooPlugin>[
+  modoo_format_epub.createPlugin(),
+  modoo_format_txt.createPlugin(),
+];

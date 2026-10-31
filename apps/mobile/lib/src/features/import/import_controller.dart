@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:modoo_core/modoo_core.dart';
+import 'package:modoo_plugin_api/modoo_plugin_api.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../providers/app_providers.dart';
@@ -65,8 +66,12 @@ class ImportController extends _$ImportController {
     try {
       final FilePickerResult? picked = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ImportService.supportedExtensions
+        allowedExtensions: ref
+            .read(pluginRegistryProvider)
+            .formatParsers
+            .expand((BookFormatParser parser) => parser.extensions)
             .map((String value) => value.substring(1))
+            .toSet()
             .toList(growable: false),
         withData: false,
       );

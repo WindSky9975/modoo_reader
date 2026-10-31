@@ -31,6 +31,11 @@ final class _RecordingSink implements ImportSink {
   void addChapter(ChapterMeta meta) => chapters.add(meta);
 
   @override
+  void addText(String text) => emitted.write(text);
+
+  final StringBuffer emitted = StringBuffer();
+
+  @override
   void reportProgress(double fraction, {String? detail}) => progress.add(fraction);
 }
 

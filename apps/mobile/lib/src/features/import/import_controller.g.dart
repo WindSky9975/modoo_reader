@@ -43,7 +43,7 @@ final class ImportControllerProvider extends $NotifierProvider<ImportController,
   }
 }
 
-String _$importControllerHash() => r'2a44cf837441dabb6ae02f15b5726591a00c0e18';
+String _$importControllerHash() => r'1e15159900276b2268286ad8d02331e7ed918e4e';
 
 /// Drives one import: pick a file, copy it into the library, insert rows.
 

@@ -30,9 +30,9 @@ void main() {
     }
   });
 
-  Future<ImportService> buildService() async {
+  Future<ImportService> buildService({List<ModooPlugin>? plugins}) async {
     final PluginRegistry registry = PluginRegistry(
-      plugins: <ModooPlugin>[plugin],
+      plugins: plugins ?? <ModooPlugin>[plugin],
       logger: const SilentLogger(),
     );
     await registry.initialize();
@@ -109,6 +109,24 @@ void main() {
     expect(books.all, isEmpty);
     expect(library.listSync(), isEmpty);
   });
+
+  test('container formats write the text the plugin emitted', () async {
+    // A container parser gets the raw bytes and decides what the text is.
+    final File source = File('${root.path}/book.epub');
+    await source.writeAsBytes(<int>[0x50, 0x4b, 3, 4, 0, 0]);
+
+    final ImportService service = await buildService(
+      plugins: <ModooPlugin>[_FakeContainerPlugin()],
+    );
+    final ImportOutcome outcome = await service.importFile(sourcePath: source.path);
+
+    expect(outcome.book.title, '容器书名');
+    expect(outcome.book.formatId, 'epub');
+    expect(outcome.book.encoding, 'utf-8');
+    final List<File> copies = library.listSync().whereType<File>().toList(growable: false);
+    expect(await copies.single.readAsString(), '第一章 容器\n正文来了。\n');
+    expect(chapters.stored[outcome.book.id]!.single.title, '第一章 容器');
+  });
 }
 
 final class _FakeBooks implements BookRepository {
@@ -177,6 +195,54 @@ final class _FakePlugin implements ModooPlugin {
   }
 }
 
+/// A container format: the host hands over the raw bytes and the plugin decides
+/// what the chapter text is.
+final class _FakeContainerPlugin implements ModooPlugin {
+  @override
+  PluginManifest get manifest => const PluginManifest(
+    id: 'modoo.format.container',
+    name: 'CONTAINER',
+    version: '0.1.0',
+    sdkConstraint: ModooPluginApi.versionRange,
+    capabilities: <Type>{BookFormatParser},
+  );
+
+  @override
+  Future<void> register(PluginContext context) async {
+    context.bind<BookFormatParser>(_FakeContainerParser());
+  }
+}
+
+final class _FakeContainerParser implements BookFormatParser {
+  static const String _text = '第一章 容器\n正文来了。\n';
+
+  @override
+  String get formatId => 'epub';
+
+  @override
+  Set<String> get extensions => const <String>{'.epub'};
+
+  @override
+  bool get handlesBinaryContainers => true;
+
+  @override
+  Future<ProbeResult> probe(FileHandle file) async => const ProbeResult(supported: true);
+
+  @override
+  Future<ImportResult> import(FileHandle file, ImportSink sink) async {
+    sink.addText(_text);
+    sink.addChapter(
+      const ChapterMeta(index: 0, title: '第一章 容器', startOffset: 0, endOffset: 6, wordCount: 6),
+    );
+    sink.reportProgress(1);
+    return const ImportResult(chapterCount: 1, wordCount: 11, encoding: 'utf-8', title: '容器书名');
+  }
+
+  @override
+  Future<ChapterDoc> loadChapter(FileHandle file, ChapterRef chapter) async =>
+      const ChapterDoc(text: '');
+}
+
 /// Parses two chapters by splitting on the first two newlines.
 final class _FakeParser implements BookFormatParser {
   bool supported = true;
@@ -186,6 +252,9 @@ final class _FakeParser implements BookFormatParser {
 
   @override
   Set<String> get extensions => const <String>{'.txt'};
+
+  @override
+  bool get handlesBinaryContainers => false;
 
   @override
   Future<ProbeResult> probe(FileHandle file) async => supported

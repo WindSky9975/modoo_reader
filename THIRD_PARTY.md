@@ -34,6 +34,9 @@
 | `enough_convert` | 1.7.1 | **MPL-2.0** | 纯 Dart 的 GBK 解码（ADR-0011）；不修改其源码 |
 | `file_picker` | 11.0.3 | MIT | 系统文件选择器（导入 TXT） |
 | `flutter_plugin_android_lifecycle` | 2.0.35 | BSD-3-Clause | `file_picker` 的 Android 传递依赖 |
+| `archive` | 4.5.2 | MIT | EPUB 的 zip 解包（`plugins/format_epub`） |
+| `html` | 0.15.7 | BSD-3-Clause | XHTML 解析（`plugins/format_epub`） |
+| `csslib` | 1.0.2 | BSD-3-Clause | `html` 的传递依赖 |
 
 ## 构建/开发期依赖（不进入运行时产物）
 

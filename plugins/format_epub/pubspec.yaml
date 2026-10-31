@@ -1,0 +1,20 @@
+name: modoo_format_epub
+description: "EPUB book parser: container metadata, spine order and text extraction."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+resolution: workspace
+
+dependencies:
+  modoo_plugin_api:
+    path: ../../packages/plugin_api
+  archive: ^4.0.7
+  html: ^0.15.6
+  path: ^1.9.1
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  test: ^1.25.0
