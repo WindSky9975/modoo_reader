@@ -1,3 +1,4 @@
+import 'annotation.dart';
 import 'book.dart';
 import 'bookmark.dart';
 import 'chapter.dart';
@@ -79,4 +80,17 @@ abstract interface class SettingsRepository {
   Future<ReaderSettings> read();
 
   Future<void> save(ReaderSettings settings);
+}
+
+/// The reader's own paragraph notes ("段评" without the social part).
+///
+/// One note per paragraph: adding again for the same range replaces the body,
+/// which keeps a long press from stacking duplicates on the same paragraph.
+abstract interface class AnnotationRepository {
+  Stream<List<Annotation>> watchForBook(int bookId);
+
+  /// Returns the row id, whether the row was inserted or updated.
+  Future<int> add(Annotation annotation);
+
+  Future<void> delete(int id);
 }

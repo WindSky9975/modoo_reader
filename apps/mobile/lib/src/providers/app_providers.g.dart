@@ -471,6 +471,52 @@ final class BookmarkRepositoryProvider
 
 String _$bookmarkRepositoryHash() => r'133988f76c368d2dc1e8d491def9acd30636e258';
 
+/// The reader's own paragraph notes.
+
+@ProviderFor(annotationRepository)
+final annotationRepositoryProvider = AnnotationRepositoryProvider._();
+
+/// The reader's own paragraph notes.
+
+final class AnnotationRepositoryProvider
+    extends $FunctionalProvider<AnnotationRepository, AnnotationRepository, AnnotationRepository>
+    with $Provider<AnnotationRepository> {
+  /// The reader's own paragraph notes.
+  AnnotationRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'annotationRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$annotationRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<AnnotationRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AnnotationRepository create(Ref ref) {
+    return annotationRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AnnotationRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AnnotationRepository>(value),
+    );
+  }
+}
+
+String _$annotationRepositoryHash() => r'fa35a76735be719e0f80e3d2507e7c019f5fce0c';
+
 /// Measured with `TextPainter`, so it has to run on the UI isolate.
 
 @ProviderFor(textLayoutEngine)
@@ -831,6 +877,86 @@ final class BookmarksFamily extends $Family
 
   @override
   String toString() => r'bookmarksProvider';
+}
+
+/// Paragraph notes of one book, ordered by position.
+
+@ProviderFor(annotations)
+final annotationsProvider = AnnotationsFamily._();
+
+/// Paragraph notes of one book, ordered by position.
+
+final class AnnotationsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Annotation>>,
+          List<Annotation>,
+          Stream<List<Annotation>>
+        >
+    with $FutureModifier<List<Annotation>>, $StreamProvider<List<Annotation>> {
+  /// Paragraph notes of one book, ordered by position.
+  AnnotationsProvider._({required AnnotationsFamily super.from, required int super.argument})
+    : super(
+        retry: null,
+        name: r'annotationsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$annotationsHash();
+
+  @override
+  String toString() {
+    return r'annotationsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Annotation>> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Annotation>> create(Ref ref) {
+    final argument = this.argument as int;
+    return annotations(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is AnnotationsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$annotationsHash() => r'ef4454c944bda6328fb86f966ce2f92e6e27b21e';
+
+/// Paragraph notes of one book, ordered by position.
+
+final class AnnotationsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<Annotation>>, int> {
+  AnnotationsFamily._()
+    : super(
+        retry: null,
+        name: r'annotationsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Paragraph notes of one book, ordered by position.
+
+  AnnotationsProvider call(int bookId) => AnnotationsProvider._(argument: bookId, from: this);
+
+  @override
+  String toString() => r'annotationsProvider';
 }
 
 /// The whole book as text, decoded once and cached while reading.

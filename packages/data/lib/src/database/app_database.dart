@@ -13,7 +13,9 @@ part 'app_database.g.dart';
 /// Only ever append a new `if (from < N)` step; never edit history and never
 /// rename or repurpose a column. The schema version starts at 1 in M0 and every
 /// later milestone appends its own step.
-@DriftDatabase(tables: <Type>[Books, Chapters, ProgressRows, PageLayouts, AppSettings, Bookmarks])
+@DriftDatabase(
+  tables: <Type>[Books, Chapters, ProgressRows, PageLayouts, AppSettings, Bookmarks, Annotations],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -28,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -43,6 +45,10 @@ class AppDatabase extends _$AppDatabase {
       // v3: bookmarks (M2).
       if (from < 3) {
         await migrator.createTable(bookmarks);
+      }
+      // v4: paragraph annotations (M2).
+      if (from < 4) {
+        await migrator.createTable(annotations);
       }
     },
     beforeOpen: (OpeningDetails details) async {

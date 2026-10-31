@@ -60,6 +60,11 @@ PageLayoutRepository pageLayoutRepository(Ref ref) =>
 BookmarkRepository bookmarkRepository(Ref ref) =>
     DriftBookmarkRepository(ref.watch(appDatabaseProvider));
 
+/// The reader's own paragraph notes.
+@Riverpod(keepAlive: true)
+AnnotationRepository annotationRepository(Ref ref) =>
+    DriftAnnotationRepository(ref.watch(appDatabaseProvider));
+
 /// Measured with `TextPainter`, so it has to run on the UI isolate.
 @Riverpod(keepAlive: true)
 TextLayoutEngine textLayoutEngine(Ref ref) => const TextPainterLayoutEngine();
@@ -86,6 +91,11 @@ Future<ReadingProgress?> readingProgress(Ref ref, int bookId) =>
 @riverpod
 Stream<List<Bookmark>> bookmarks(Ref ref, int bookId) =>
     ref.watch(bookmarkRepositoryProvider).watchForBook(bookId);
+
+/// Paragraph notes of one book, ordered by position.
+@riverpod
+Stream<List<Annotation>> annotations(Ref ref, int bookId) =>
+    ref.watch(annotationRepositoryProvider).watchForBook(bookId);
 
 /// The whole book as text, decoded once and cached while reading.
 ///

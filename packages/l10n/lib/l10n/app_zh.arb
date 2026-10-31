@@ -219,6 +219,43 @@
   "@retry": {
     "description": "Generic retry button."
   },
+  "annotationsTitle": "批注",
+  "@annotationsTitle": {
+    "description": "Title of the paragraph notes list."
+  },
+  "annotationsThisPage": "本页批注",
+  "@annotationsThisPage": {
+    "description": "Menu item that opens the notes of the current page."
+  },
+  "annotationHint": "写下你的想法",
+  "@annotationHint": {
+    "description": "Hint of the note text field."
+  },
+  "annotationSaved": "已保存批注",
+  "@annotationSaved": {
+    "description": "Snackbar after a note is stored."
+  },
+  "annotationDeleted": "批注已删除",
+  "@annotationDeleted": {
+    "description": "Snackbar after a note is removed."
+  },
+  "noAnnotations": "还没有批注",
+  "@noAnnotations": {
+    "description": "Empty state of the notes list."
+  },
+  "editAnnotation": "编辑批注",
+  "@editAnnotation": {
+    "description": "Title of the note editor when a note already exists."
+  },
+  "paragraphNumber": "第 {index} 段",
+  "@paragraphNumber": {
+    "description": "Label of a paragraph inside the notes sheet.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
   "errorGeneric": "出了点问题",
   "@errorGeneric": {
     "description": "Generic error headline; details stay in the log."

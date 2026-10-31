@@ -383,6 +383,215 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     builder: (BuildContext dialogContext) => _BookmarkNoteDialog(excerpt: excerpt),
   );
 
+  /// Paragraphs of the current page, with their offsets inside the chapter.
+  List<({int start, int end, String text})> _pageParagraphs() {
+    if (_pages.isEmpty || _chapters.isEmpty) return const <({int start, int end, String text})>[];
+    final Chapter chapter = _chapters[_chapterIndex.clamp(0, _chapters.length - 1)];
+    final PageSpan page = _pages[_pageIndex.clamp(0, _pages.length - 1)];
+    final int base = chapter.startOffset + page.startOffset;
+    final int stop = (chapter.startOffset + page.endOffset).clamp(base, _fullText.length);
+    if (base >= stop) return const <({int start, int end, String text})>[];
+
+    final List<({int start, int end, String text})> paragraphs =
+        <({int start, int end, String text})>[];
+    final String slice = _fullText.substring(base, stop);
+    int cursor = 0;
+    for (final String line in slice.split('\n')) {
+      final String trimmed = line.trim();
+      if (trimmed.isNotEmpty) {
+        paragraphs.add((start: base + cursor, end: base + cursor + line.length, text: trimmed));
+      }
+      cursor += line.length + 1;
+    }
+    return paragraphs;
+  }
+
+  Future<void> _writeAnnotation({
+    required int start,
+    required int end,
+    required String excerpt,
+    Annotation? existing,
+  }) async {
+    final String? body = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) => _AnnotationDialog(
+        title: existing == null ? context.l10n.annotationsTitle : context.l10n.editAnnotation,
+        excerpt: excerpt,
+        initial: existing?.body ?? '',
+      ),
+    );
+    if (body == null || body.isEmpty || !mounted) return;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String saved = context.l10n.annotationSaved;
+    await ref
+        .read(annotationRepositoryProvider)
+        .add(
+          Annotation(
+            id: existing?.id ?? 0,
+            bookId: widget.bookId,
+            chapterIndex: _chapterIndex,
+            startOffset: start,
+            endOffset: end,
+            excerpt: excerpt,
+            body: body,
+            createdAt: DateTime.now().toUtc(),
+          ),
+        );
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(content: Text(saved)));
+  }
+
+  void _openPageAnnotations() {
+    final List<({int start, int end, String text})> paragraphs = _pageParagraphs();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) {
+        return Consumer(
+          builder: (BuildContext context, WidgetRef ref, Widget? child) {
+            final List<Annotation> notes =
+                ref.watch(annotationsProvider(widget.bookId)).value ?? const <Annotation>[];
+            final Map<int, Annotation> byStart = <int, Annotation>{
+              for (final Annotation note in notes)
+                if (note.chapterIndex == _chapterIndex) note.startOffset: note,
+            };
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.6,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                      child: Text(
+                        context.l10n.annotationsThisPage,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: paragraphs.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final ({int start, int end, String text}) paragraph = paragraphs[index];
+                          final Annotation? note = byStart[paragraph.start];
+                          return ListTile(
+                            title: Text(
+                              paragraph.text,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            subtitle: note == null
+                                ? Text(context.l10n.annotationHint)
+                                : Text('${note.body} · ${context.l10n.editAnnotation}'),
+                            trailing: Icon(
+                              note == null ? Icons.edit_note : Icons.mode_comment,
+                              color: note == null ? null : Theme.of(context).colorScheme.primary,
+                            ),
+                            onTap: () {
+                              Navigator.of(sheetContext).pop();
+                              unawaited(
+                                _writeAnnotation(
+                                  start: paragraph.start,
+                                  end: paragraph.end,
+                                  excerpt: paragraph.text,
+                                  existing: note,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openAnnotations() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) {
+        return Consumer(
+          builder: (BuildContext context, WidgetRef ref, Widget? child) {
+            final AsyncValue<List<Annotation>> notes = ref.watch(
+              annotationsProvider(widget.bookId),
+            );
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.6,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                      child: Text(
+                        context.l10n.annotationsTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    Expanded(
+                      child: notes.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (Object error, StackTrace _) =>
+                            Center(child: Text(context.l10n.errorGeneric)),
+                        data: (List<Annotation> items) {
+                          if (items.isEmpty) {
+                            return Center(child: Text(context.l10n.noAnnotations));
+                          }
+                          return ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final Annotation note = items[index];
+                              final String chapterTitle =
+                                  _chapterAt(note.chapterIndex)?.title ?? '';
+                              return ListTile(
+                                leading: const Icon(Icons.mode_comment_outlined),
+                                title: Text(
+                                  note.body,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  '$chapterTitle · ${note.excerpt}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                trailing: IconButton(
+                                  tooltip: context.l10n.delete,
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: () => unawaited(
+                                    ref.read(annotationRepositoryProvider).delete(note.id),
+                                  ),
+                                ),
+                                onTap: () {
+                                  Navigator.of(sheetContext).pop();
+                                  _jumpTo(note.chapterIndex, note.startOffset);
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _openBookmarks() {
     showModalBottomSheet<void>(
       context: context,
@@ -608,6 +817,23 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.bookmarks_outlined),
                     title: Text(context.l10n.bookmarksTitle),
+                  ),
+                ),
+                PopupMenuItem<void>(
+                  enabled: _pages.isNotEmpty,
+                  onTap: _openPageAnnotations,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.mode_comment_outlined),
+                    title: Text(context.l10n.annotationsThisPage),
+                  ),
+                ),
+                PopupMenuItem<void>(
+                  onTap: _openAnnotations,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.notes_outlined),
+                    title: Text(context.l10n.annotationsTitle),
                   ),
                 ),
               ],
@@ -1104,6 +1330,67 @@ class _BookmarkNoteDialogState extends State<_BookmarkNoteDialog> {
           TextField(
             controller: _controller,
             decoration: InputDecoration(hintText: strings.bookmarkNoteHint),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(strings.cancel)),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: Text(strings.save),
+        ),
+      ],
+    );
+  }
+}
+
+/// Editor for a paragraph note.
+///
+/// Same controller-ownership rule as [_BookmarkNoteDialog]: the controller lives
+/// in the state so it outlives the dialog's exit animation.
+class _AnnotationDialog extends StatefulWidget {
+  const _AnnotationDialog({required this.title, required this.excerpt, required this.initial});
+
+  final String title;
+  final String excerpt;
+  final String initial;
+
+  @override
+  State<_AnnotationDialog> createState() => _AnnotationDialogState();
+}
+
+class _AnnotationDialogState extends State<_AnnotationDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initial)
+    ..selection = TextSelection.collapsed(offset: widget.initial.length);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ModooLocalizations strings = context.l10n;
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            widget.excerpt,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            minLines: 2,
+            maxLines: 6,
+            decoration: InputDecoration(hintText: strings.annotationHint),
           ),
         ],
       ),

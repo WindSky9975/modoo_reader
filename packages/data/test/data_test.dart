@@ -17,8 +17,8 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('schema v3 creates the six tables', () async {
-    expect(db.schemaVersion, 3);
+  test('schema v4 creates the seven tables', () async {
+    expect(db.schemaVersion, 4);
     final names = await db
         .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
         .map((row) => row.read<String>('name'))
@@ -32,6 +32,7 @@ void main() {
         'page_layouts',
         'app_settings',
         'bookmarks',
+        'annotations',
       ]),
     );
   });
@@ -254,6 +255,38 @@ void main() {
     expect(listed, hasLength(1));
     expect(listed.single.note, '改过的备注');
   });
+
+  test('annotations are listed in reading order and can be deleted', () async {
+    final annotations = DriftAnnotationRepository(db);
+    final bookId = await books.insert(_book());
+    await annotations.add(_annotation(bookId, chapterIndex: 1, endOffset: 40, body: '第二章的批注'));
+    await annotations.add(_annotation(bookId, startOffset: 100, endOffset: 160, body: '第一章中段的想法'));
+
+    final listed = await annotations.watchForBook(bookId).first;
+    expect(listed.map((Annotation a) => a.chapterIndex), <int>[0, 1]);
+    expect(listed.first.body, '第一章中段的想法');
+    expect(listed.first.length, 60);
+
+    await annotations.delete(listed.first.id);
+    expect((await annotations.watchForBook(bookId).first).length, 1);
+  });
+
+  test('annotating the same paragraph twice replaces the body', () async {
+    final annotations = DriftAnnotationRepository(db);
+    final bookId = await books.insert(_book());
+    final first = await annotations.add(
+      _annotation(bookId, startOffset: 10, endOffset: 80, body: '第一版'),
+    );
+    final second = await annotations.add(
+      _annotation(bookId, startOffset: 10, endOffset: 88, body: '第二版'),
+    );
+
+    expect(second, first);
+    final listed = await annotations.watchForBook(bookId).first;
+    expect(listed, hasLength(1));
+    expect(listed.single.body, '第二版');
+    expect(listed.single.endOffset, 88);
+  });
 }
 
 Book _book({String path = '/books/shanhai.txt'}) => Book(
@@ -288,5 +321,23 @@ Bookmark _bookmark(
   charOffset: charOffset,
   excerpt: excerpt,
   note: note,
+  createdAt: DateTime.utc(2026, 10, 31),
+);
+
+Annotation _annotation(
+  int bookId, {
+  int chapterIndex = 0,
+  int startOffset = 0,
+  int endOffset = 20,
+  String excerpt = '被批注的段落',
+  String body = '',
+}) => Annotation(
+  id: 0,
+  bookId: bookId,
+  chapterIndex: chapterIndex,
+  startOffset: startOffset,
+  endOffset: endOffset,
+  excerpt: excerpt,
+  body: body,
   createdAt: DateTime.utc(2026, 10, 31),
 );

@@ -73,5 +73,20 @@
   "themeNight": "Night",
   "themeAmoled": "Black",
   "retry": "Retry",
+  "annotationsTitle": "Notes",
+  "annotationsThisPage": "Notes on this page",
+  "annotationHint": "Write down your thoughts",
+  "annotationSaved": "Note saved",
+  "annotationDeleted": "Note deleted",
+  "noAnnotations": "No notes yet",
+  "editAnnotation": "Edit note",
+  "paragraphNumber": "Paragraph {index}",
+  "@paragraphNumber": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
   "errorGeneric": "Something went wrong"
 }

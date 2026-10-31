@@ -388,6 +388,54 @@ abstract class ModooLocalizations {
   /// **'重试'**
   String get retry;
 
+  /// Title of the paragraph notes list.
+  ///
+  /// In zh, this message translates to:
+  /// **'批注'**
+  String get annotationsTitle;
+
+  /// Menu item that opens the notes of the current page.
+  ///
+  /// In zh, this message translates to:
+  /// **'本页批注'**
+  String get annotationsThisPage;
+
+  /// Hint of the note text field.
+  ///
+  /// In zh, this message translates to:
+  /// **'写下你的想法'**
+  String get annotationHint;
+
+  /// Snackbar after a note is stored.
+  ///
+  /// In zh, this message translates to:
+  /// **'已保存批注'**
+  String get annotationSaved;
+
+  /// Snackbar after a note is removed.
+  ///
+  /// In zh, this message translates to:
+  /// **'批注已删除'**
+  String get annotationDeleted;
+
+  /// Empty state of the notes list.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有批注'**
+  String get noAnnotations;
+
+  /// Title of the note editor when a note already exists.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑批注'**
+  String get editAnnotation;
+
+  /// Label of a paragraph inside the notes sheet.
+  ///
+  /// In zh, this message translates to:
+  /// **'第 {index} 段'**
+  String paragraphNumber(int index);
+
   /// Generic error headline; details stay in the log.
   ///
   /// In zh, this message translates to:

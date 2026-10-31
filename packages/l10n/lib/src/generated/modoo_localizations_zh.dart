@@ -167,5 +167,31 @@ class ModooLocalizationsZh extends ModooLocalizations {
   String get retry => '重试';
 
   @override
+  String get annotationsTitle => '批注';
+
+  @override
+  String get annotationsThisPage => '本页批注';
+
+  @override
+  String get annotationHint => '写下你的想法';
+
+  @override
+  String get annotationSaved => '已保存批注';
+
+  @override
+  String get annotationDeleted => '批注已删除';
+
+  @override
+  String get noAnnotations => '还没有批注';
+
+  @override
+  String get editAnnotation => '编辑批注';
+
+  @override
+  String paragraphNumber(int index) {
+    return '第 $index 段';
+  }
+
+  @override
   String get errorGeneric => '出了点问题';
 }

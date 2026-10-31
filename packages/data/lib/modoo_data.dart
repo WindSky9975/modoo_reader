@@ -6,6 +6,7 @@ library;
 
 export 'src/database/app_database.dart';
 export 'src/database/tables.dart';
+export 'src/repositories/drift_annotation_repository.dart';
 export 'src/repositories/drift_book_repository.dart';
 export 'src/repositories/drift_bookmark_repository.dart';
 export 'src/repositories/drift_chapter_repository.dart';

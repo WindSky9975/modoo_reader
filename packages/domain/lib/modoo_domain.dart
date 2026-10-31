@@ -5,6 +5,7 @@
 /// live in modoo_data (CODE_STYLE §3.2).
 library;
 
+export 'src/annotation.dart';
 export 'src/book.dart';
 export 'src/bookmark.dart';
 export 'src/chapter.dart';

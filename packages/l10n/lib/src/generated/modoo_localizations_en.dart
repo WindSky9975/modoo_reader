@@ -172,5 +172,31 @@ class ModooLocalizationsEn extends ModooLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get annotationsTitle => 'Notes';
+
+  @override
+  String get annotationsThisPage => 'Notes on this page';
+
+  @override
+  String get annotationHint => 'Write down your thoughts';
+
+  @override
+  String get annotationSaved => 'Note saved';
+
+  @override
+  String get annotationDeleted => 'Note deleted';
+
+  @override
+  String get noAnnotations => 'No notes yet';
+
+  @override
+  String get editAnnotation => 'Edit note';
+
+  @override
+  String paragraphNumber(int index) {
+    return 'Paragraph $index';
+  }
+
+  @override
   String get errorGeneric => 'Something went wrong';
 }

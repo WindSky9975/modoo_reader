@@ -134,6 +134,35 @@ class Bookmarks extends Table {
   ];
 }
 
+/// The reader's own paragraph notes (schema v4).
+///
+/// A note is anchored to a paragraph's character range, not to a page, so it
+/// survives typography changes (ADR-0002). The unique key makes "annotate this
+/// paragraph again" an update instead of a duplicate.
+@DataClassName('AnnotationRow')
+class Annotations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  IntColumn get bookId => integer().references(Books, #id)();
+
+  IntColumn get chapterIndex => integer()();
+
+  IntColumn get startOffset => integer()();
+
+  IntColumn get endOffset => integer()();
+
+  TextColumn get excerpt => text()();
+
+  TextColumn get body => text()();
+
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => <Set<Column<Object>>>[
+    <Column<Object>>{bookId, chapterIndex, startOffset},
+  ];
+}
+
 /// Key/value store for app preferences (schema v2).
 ///
 /// Values are JSON so a new preference never needs a schema change; the keys
