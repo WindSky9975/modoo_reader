@@ -425,6 +425,52 @@ final class PageLayoutRepositoryProvider
 
 String _$pageLayoutRepositoryHash() => r'ddffd087735b2c4522acb82c541d445bd524ab32';
 
+/// Saved spots inside books.
+
+@ProviderFor(bookmarkRepository)
+final bookmarkRepositoryProvider = BookmarkRepositoryProvider._();
+
+/// Saved spots inside books.
+
+final class BookmarkRepositoryProvider
+    extends $FunctionalProvider<BookmarkRepository, BookmarkRepository, BookmarkRepository>
+    with $Provider<BookmarkRepository> {
+  /// Saved spots inside books.
+  BookmarkRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'bookmarkRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$bookmarkRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<BookmarkRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  BookmarkRepository create(Ref ref) {
+    return bookmarkRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BookmarkRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BookmarkRepository>(value),
+    );
+  }
+}
+
+String _$bookmarkRepositoryHash() => r'133988f76c368d2dc1e8d491def9acd30636e258';
+
 /// Measured with `TextPainter`, so it has to run on the UI isolate.
 
 @ProviderFor(textLayoutEngine)
@@ -710,6 +756,81 @@ final class ReadingProgressFamily extends $Family
 
   @override
   String toString() => r'readingProgressProvider';
+}
+
+/// Bookmarks of one book, ordered by position.
+
+@ProviderFor(bookmarks)
+final bookmarksProvider = BookmarksFamily._();
+
+/// Bookmarks of one book, ordered by position.
+
+final class BookmarksProvider
+    extends $FunctionalProvider<AsyncValue<List<Bookmark>>, List<Bookmark>, Stream<List<Bookmark>>>
+    with $FutureModifier<List<Bookmark>>, $StreamProvider<List<Bookmark>> {
+  /// Bookmarks of one book, ordered by position.
+  BookmarksProvider._({required BookmarksFamily super.from, required int super.argument})
+    : super(
+        retry: null,
+        name: r'bookmarksProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$bookmarksHash();
+
+  @override
+  String toString() {
+    return r'bookmarksProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Bookmark>> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Bookmark>> create(Ref ref) {
+    final argument = this.argument as int;
+    return bookmarks(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BookmarksProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$bookmarksHash() => r'ef5353a9c450058b195eb3c14a4fab349553a2f2';
+
+/// Bookmarks of one book, ordered by position.
+
+final class BookmarksFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<Bookmark>>, int> {
+  BookmarksFamily._()
+    : super(
+        retry: null,
+        name: r'bookmarksProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Bookmarks of one book, ordered by position.
+
+  BookmarksProvider call(int bookId) => BookmarksProvider._(argument: bookId, from: this);
+
+  @override
+  String toString() => r'bookmarksProvider';
 }
 
 /// The whole book as text, decoded once and cached while reading.

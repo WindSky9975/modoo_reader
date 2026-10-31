@@ -107,6 +107,33 @@ class PageLayouts extends Table {
   ];
 }
 
+/// User bookmarks (schema v3).
+///
+/// The position is a character offset inside the chapter, never a page number:
+/// a bookmark has to survive a font size change (ADR-0002). [excerpt] is stored
+/// so the list renders without loading the chapter text.
+@DataClassName('BookmarkRow')
+class Bookmarks extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  IntColumn get bookId => integer().references(Books, #id)();
+
+  IntColumn get chapterIndex => integer()();
+
+  IntColumn get charOffset => integer()();
+
+  TextColumn get excerpt => text()();
+
+  TextColumn get note => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => <Set<Column<Object>>>[
+    <Column<Object>>{bookId, chapterIndex, charOffset},
+  ];
+}
+
 /// Key/value store for app preferences (schema v2).
 ///
 /// Values are JSON so a new preference never needs a schema change; the keys

@@ -757,8 +757,8 @@ gantt
 
 #### M2 · 分页与体验成型（W7–W10，40h）
 
-> **状态：进行中（2026-10-31）**。已完成：分页引擎（`TextPainter` + `computeLineMetrics` 贪心装箱）、`page_layouts` 页表缓存（schema v2）、左右翻页（滑动/无动画）、字号/行距/翻页模式持久化、改字号后按字符偏移保位。
-> 未完成：预分页（空闲帧）、双指捏合、书签、选中复制、全书搜索、EPUB、阅读统计。
+> **状态：进行中（2026-10-31）**。已完成：分页引擎（`TextPainter` + `computeLineMetrics` 贪心装箱，2 万字符单章 < 300ms）、`page_layouts` 页表缓存（schema v2）、左右翻页（滑动/无动画）、字号/行距/翻页模式持久化、改字号后按字符偏移保位、书签（增/列/跳/删，schema v3）、下一章预分页（翻页停止 700ms 后防抖预排）。
+> 未完成：双指捏合、选中复制、全书搜索、EPUB、阅读统计、覆盖式翻页。
 
 | 任务 | 验收 |
 | --- | --- |
@@ -1046,3 +1046,4 @@ M0 已于 2026-10-31 完成并通过 `dart run tool/tasks.dart check`。下表�
 | v0.2 | 2026-10-31 | 三文档一致性评审修正：分页限定在 UI isolate（`TextPainter` 字体环境）、layoutHash 补全字段（段距/排版开关/字体版本）、依赖表补 `core ← 所有业务包` 与 `source_engine`、注册表统一 `buildPluginRegistry()` + `dart run tool/tasks.dart gen:registry`、覆盖率口径改 `plugins/format_*`、P2 归入 M6；§0.3 的 4 条决策经确认；补 ADR-0009/0010 |
 | v0.3 | 2026-10-31 | 新增 `docs/GIT_WORKFLOW.md`（分支、推送、分支保护、PR、tag 发版、Git 报错处置）；§3.3 目录树与 §7.2 协作规范补引用与执行细则 |
 | v0.4 | 2026-10-31 | M0 落地后回填：D7 由 melos 改为 pub workspace（melos 8 与 `drift_dev` 的 `cli_util` 约束冲突）、目录树补 `CONTRIBUTING/CODE_OF_CONDUCT/SECURITY/pubspec.lock`、§5.3 M0 标记完成、§10 行动清单回填实际进度并列出 M1 开工前债务、附录 B 换掉 melos 链接 |
+| v0.5 | 2026-10-31 | M2 进展回填：§5.3 M1 标为完成并列出未做项；M2 标为进行中，写明已完成（分页引擎、页表缓存、左右翻页、持久化、改字号保位、书签、下一章预分页）与未完成（捏合、复制、搜索、EPUB、统计、覆盖式翻页） |

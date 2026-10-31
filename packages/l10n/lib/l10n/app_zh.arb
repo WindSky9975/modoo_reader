@@ -122,6 +122,34 @@
   "@endOfChapter": {
     "description": "Shown at the end of the last chapter."
   },
+  "bookmarksTitle": "书签",
+  "@bookmarksTitle": {
+    "description": "Title of the bookmark list sheet."
+  },
+  "addBookmark": "添加书签",
+  "@addBookmark": {
+    "description": "Action that bookmarks the current page."
+  },
+  "bookmarkAdded": "已添加书签",
+  "@bookmarkAdded": {
+    "description": "Snack bar after bookmarking the current page."
+  },
+  "bookmarkDeleted": "书签已删除",
+  "@bookmarkDeleted": {
+    "description": "Snack bar after deleting a bookmark."
+  },
+  "bookmarkNoteHint": "备注（可选）",
+  "@bookmarkNoteHint": {
+    "description": "Placeholder of the bookmark note field."
+  },
+  "noBookmarks": "还没有书签",
+  "@noBookmarks": {
+    "description": "Empty state of the bookmark list."
+  },
+  "save": "保存",
+  "@save": {
+    "description": "Confirm button of dialogs that store input."
+  },
   "settingsTitle": "设置",
   "@settingsTitle": {
     "description": "Title of the settings tab."

@@ -250,6 +250,48 @@ abstract class ModooLocalizations {
   /// **'本章结束'**
   String get endOfChapter;
 
+  /// Title of the bookmark list sheet.
+  ///
+  /// In zh, this message translates to:
+  /// **'书签'**
+  String get bookmarksTitle;
+
+  /// Action that bookmarks the current page.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加书签'**
+  String get addBookmark;
+
+  /// Snack bar after bookmarking the current page.
+  ///
+  /// In zh, this message translates to:
+  /// **'已添加书签'**
+  String get bookmarkAdded;
+
+  /// Snack bar after deleting a bookmark.
+  ///
+  /// In zh, this message translates to:
+  /// **'书签已删除'**
+  String get bookmarkDeleted;
+
+  /// Placeholder of the bookmark note field.
+  ///
+  /// In zh, this message translates to:
+  /// **'备注（可选）'**
+  String get bookmarkNoteHint;
+
+  /// Empty state of the bookmark list.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有书签'**
+  String get noBookmarks;
+
+  /// Confirm button of dialogs that store input.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存'**
+  String get save;
+
   /// Title of the settings tab.
   ///
   /// In zh, this message translates to:

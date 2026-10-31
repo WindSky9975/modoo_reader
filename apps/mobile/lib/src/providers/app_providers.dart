@@ -55,6 +55,11 @@ SettingsRepository settingsRepository(Ref ref) =>
 PageLayoutRepository pageLayoutRepository(Ref ref) =>
     DriftPageLayoutRepository(ref.watch(appDatabaseProvider));
 
+/// Saved spots inside books.
+@Riverpod(keepAlive: true)
+BookmarkRepository bookmarkRepository(Ref ref) =>
+    DriftBookmarkRepository(ref.watch(appDatabaseProvider));
+
 /// Measured with `TextPainter`, so it has to run on the UI isolate.
 @Riverpod(keepAlive: true)
 TextLayoutEngine textLayoutEngine(Ref ref) => const TextPainterLayoutEngine();
@@ -76,6 +81,11 @@ Future<List<Chapter>> chapters(Ref ref, int bookId) =>
 @riverpod
 Future<ReadingProgress?> readingProgress(Ref ref, int bookId) =>
     ref.watch(progressRepositoryProvider).read(bookId);
+
+/// Bookmarks of one book, ordered by position.
+@riverpod
+Stream<List<Bookmark>> bookmarks(Ref ref, int bookId) =>
+    ref.watch(bookmarkRepositoryProvider).watchForBook(bookId);
 
 /// The whole book as text, decoded once and cached while reading.
 ///

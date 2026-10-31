@@ -95,6 +95,27 @@ class ModooLocalizationsZh extends ModooLocalizations {
   String get endOfChapter => '本章结束';
 
   @override
+  String get bookmarksTitle => '书签';
+
+  @override
+  String get addBookmark => '添加书签';
+
+  @override
+  String get bookmarkAdded => '已添加书签';
+
+  @override
+  String get bookmarkDeleted => '书签已删除';
+
+  @override
+  String get bookmarkNoteHint => '备注（可选）';
+
+  @override
+  String get noBookmarks => '还没有书签';
+
+  @override
+  String get save => '保存';
+
+  @override
   String get settingsTitle => '设置';
 
   @override

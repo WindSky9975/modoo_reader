@@ -1,4 +1,5 @@
 import 'book.dart';
+import 'bookmark.dart';
 import 'chapter.dart';
 import 'page_layout.dart';
 import 'reader_settings.dart';
@@ -58,6 +59,19 @@ abstract interface class PageLayoutRepository {
 
   /// Drops rows older than [before] so the cache cannot grow forever.
   Future<int> deleteOlderThan(DateTime before);
+}
+
+/// Saved spots inside one book.
+///
+/// Adding the same offset twice updates the note instead of duplicating the
+/// row, so the reader can offer "bookmark this page" without checking first.
+abstract interface class BookmarkRepository {
+  Stream<List<Bookmark>> watchForBook(int bookId);
+
+  /// Returns the row id, whether the row was inserted or updated.
+  Future<int> add(Bookmark bookmark);
+
+  Future<void> delete(int id);
 }
 
 /// Persisted reader preferences (font size, line height, theme, page turn).

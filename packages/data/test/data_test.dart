@@ -17,15 +17,22 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('schema v2 creates the five tables', () async {
-    expect(db.schemaVersion, 2);
+  test('schema v3 creates the six tables', () async {
+    expect(db.schemaVersion, 3);
     final names = await db
         .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
         .map((row) => row.read<String>('name'))
         .get();
     expect(
       names,
-      containsAll(<String>['books', 'chapters', 'progress_rows', 'page_layouts', 'app_settings']),
+      containsAll(<String>[
+        'books',
+        'chapters',
+        'progress_rows',
+        'page_layouts',
+        'app_settings',
+        'bookmarks',
+      ]),
     );
   });
 
@@ -221,6 +228,32 @@ void main() {
     expect(await layouts.read(bookId: first, chapterIndex: 0, layoutHash: 1), isNull);
     expect(await layouts.read(bookId: second, chapterIndex: 0, layoutHash: 1), isNotNull);
   });
+
+  test('bookmarks are listed in reading order and can be deleted', () async {
+    final bookmarks = DriftBookmarkRepository(db);
+    final bookId = await books.insert(_book());
+    await bookmarks.add(_bookmark(bookId, chapterIndex: 1, charOffset: 5, excerpt: '第二章开头'));
+    await bookmarks.add(_bookmark(bookId, charOffset: 120, excerpt: '第一章中段'));
+
+    final listed = await bookmarks.watchForBook(bookId).first;
+    expect(listed.map((Bookmark b) => b.chapterIndex), <int>[0, 1]);
+    expect(listed.first.excerpt, '第一章中段');
+
+    await bookmarks.delete(listed.first.id);
+    expect((await bookmarks.watchForBook(bookId).first).length, 1);
+  });
+
+  test('bookmarking the same spot twice updates the note instead of duplicating', () async {
+    final bookmarks = DriftBookmarkRepository(db);
+    final bookId = await books.insert(_book());
+    final first = await bookmarks.add(_bookmark(bookId, note: '第一印象'));
+    final second = await bookmarks.add(_bookmark(bookId, note: '改过的备注'));
+
+    expect(second, first);
+    final listed = await bookmarks.watchForBook(bookId).first;
+    expect(listed, hasLength(1));
+    expect(listed.single.note, '改过的备注');
+  });
 }
 
 Book _book({String path = '/books/shanhai.txt'}) => Book(
@@ -240,4 +273,20 @@ Chapter _chapter(int bookId, int index, String title, int start, int end) => Cha
   startOffset: start,
   endOffset: end,
   wordCount: end - start,
+);
+
+Bookmark _bookmark(
+  int bookId, {
+  int chapterIndex = 0,
+  int charOffset = 0,
+  String excerpt = '摘录',
+  String? note,
+}) => Bookmark(
+  id: 0,
+  bookId: bookId,
+  chapterIndex: chapterIndex,
+  charOffset: charOffset,
+  excerpt: excerpt,
+  note: note,
+  createdAt: DateTime.utc(2026, 10, 31),
 );

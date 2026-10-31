@@ -38,11 +38,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   bool _restored = false;
   bool _paginating = false;
   bool _paginateScheduled = false;
+  Timer? _prefetchTimer;
   String? _paginateError;
   int _paginateToken = 0;
   int _layoutHash = 0;
   Size _contentSize = Size.zero;
   String _cacheKey = '';
+
+  /// Whole book text; needed to slice the next chapter for prefetching.
+  String _fullText = '';
 
   @override
   void initState() {
@@ -52,6 +56,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   @override
   void dispose() {
+    _prefetchTimer?.cancel();
     _saveProgress();
     _pageController.dispose();
     super.dispose();
@@ -118,10 +123,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         _pageIndex = target.clamp(0, math.max(0, pages.length - 1));
         _restoredOffset = -1;
       });
-      if (_pageController.hasClients && _pageIndex > 0) {
+      // The PageView is built from `_pages`, so the controller only has clients
+      // after the frame that swaps the list; jump once that frame is done.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_pageController.hasClients) return;
+        if (_pageController.page?.round() == _pageIndex) return;
         _pageController.jumpToPage(_pageIndex);
-      }
+      });
       _saveProgress();
+      _schedulePrefetch(chapterIndex: chapter.index, spec: spec, width: width, height: height);
     } on Object catch (error, stackTrace) {
       // A failed layout must not leave the reader on a spinner forever.
       if (!mounted || token != _paginateToken) return;
@@ -188,6 +198,64 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           .catchError((Object _) {}),
     );
     return pages;
+  }
+
+  /// Warms the page cache for the chapter after [chapterIndex] once the reader
+  /// stops turning pages.
+  ///
+  /// Measuring needs the font environment, so it cannot move to a background
+  /// isolate and Flutter exposes no idle queue; a short debounce keeps the work
+  /// out of the frames the reader is interacting with (DEVELOPMENT_PLAN
+  /// §3.5.3). Only the cache is written — no state changes, so a prefetch that
+  /// lands late can never move the reader.
+  void _schedulePrefetch({
+    required int chapterIndex,
+    required LayoutSpec spec,
+    required double width,
+    required double height,
+  }) {
+    if (_fullText.isEmpty) return;
+    final int next = chapterIndex + 1;
+    if (next >= _chapters.length) return;
+    _prefetchTimer?.cancel();
+    _prefetchTimer = Timer(
+      const Duration(milliseconds: 700),
+      () => unawaited(_prefetch(next, spec, width, height)),
+    );
+  }
+
+  Future<void> _prefetch(int chapterIndex, LayoutSpec spec, double width, double height) async {
+    if (!mounted) return;
+    try {
+      final Chapter chapter = _chapters[chapterIndex];
+      final int start = chapter.startOffset.clamp(0, _fullText.length);
+      final int end = chapter.endOffset.clamp(start, _fullText.length);
+      if (end <= start) return;
+      await _layout(chapter, _fullText.substring(start, end), spec, width, height);
+    } on Object catch (error) {
+      // A prefetch is an optimisation; failing it must not surface anywhere.
+      ref.read(loggerProvider).debug('prefetch failed for chapter $chapterIndex: $error');
+    }
+  }
+
+  Chapter? _chapterAt(int index) {
+    if (index < 0 || index >= _chapters.length) return null;
+    return _chapters[index];
+  }
+
+  /// Jumps to [charOffset] inside [chapterIndex] (bookmark navigation).
+  void _jumpTo(int chapterIndex, int charOffset) {
+    if (_chapters.isEmpty) return;
+    _saveProgress();
+    final int target = chapterIndex.clamp(0, _chapters.length - 1);
+    setState(() {
+      _chapterIndex = target;
+      _restoredOffset = _chapters[target].startOffset + charOffset;
+      _pages = const <PageSpan>[];
+      _pageIndex = 0;
+      _cacheKey = '';
+      _paginateToken++;
+    });
   }
 
   void _goToChapter(int index) {
@@ -259,6 +327,126 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
   }
 
+  String _excerptOf(String pageText) {
+    final String collapsed = pageText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (collapsed.length <= 60) return collapsed;
+    return '${collapsed.substring(0, 60)}…';
+  }
+
+  Future<void> _addBookmark() async {
+    if (_chapters.isEmpty || _pages.isEmpty) return;
+    final Chapter chapter = _chapters[_chapterIndex.clamp(0, _chapters.length - 1)];
+    final PageSpan page = _pages[_pageIndex.clamp(0, _pages.length - 1)];
+    final int from = (chapter.startOffset + page.startOffset).clamp(0, _fullText.length);
+    final int to = (chapter.startOffset + page.endOffset).clamp(from, _fullText.length);
+    final String excerpt = _excerptOf(_fullText.substring(from, to));
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final ModooLocalizations strings = context.l10n;
+
+    final String? note = await _askBookmarkNote(context, excerpt);
+    if (note == null || !mounted) return;
+    await ref
+        .read(bookmarkRepositoryProvider)
+        .add(
+          Bookmark(
+            id: 0,
+            bookId: widget.bookId,
+            chapterIndex: chapter.index,
+            charOffset: page.startOffset,
+            excerpt: excerpt,
+            note: note.isEmpty ? null : note,
+            createdAt: DateTime.now().toUtc(),
+          ),
+        );
+    messenger.showSnackBar(SnackBar(content: Text(strings.bookmarkAdded)));
+  }
+
+  Future<String?> _askBookmarkNote(BuildContext context, String excerpt) => showDialog<String>(
+    context: context,
+    builder: (BuildContext dialogContext) => _BookmarkNoteDialog(excerpt: excerpt),
+  );
+
+  void _openBookmarks() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) {
+        return Consumer(
+          builder: (BuildContext context, WidgetRef ref, Widget? child) {
+            final AsyncValue<List<Bookmark>> bookmarks = ref.watch(
+              bookmarksProvider(widget.bookId),
+            );
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.6,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                      child: Text(
+                        context.l10n.bookmarksTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    Expanded(
+                      child: bookmarks.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (Object error, StackTrace _) =>
+                            Center(child: Text(context.l10n.errorGeneric)),
+                        data: (List<Bookmark> items) {
+                          if (items.isEmpty) {
+                            return Center(child: Text(context.l10n.noBookmarks));
+                          }
+                          return ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final Bookmark bookmark = items[index];
+                              final String chapterTitle =
+                                  _chapterAt(bookmark.chapterIndex)?.title ?? '';
+                              final String? note = bookmark.note;
+                              return ListTile(
+                                leading: const Icon(Icons.bookmark_outline),
+                                title: Text(
+                                  bookmark.excerpt,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  note == null || note.isEmpty
+                                      ? chapterTitle
+                                      : '$chapterTitle · $note',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                trailing: IconButton(
+                                  tooltip: context.l10n.delete,
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: () => unawaited(
+                                    ref.read(bookmarkRepositoryProvider).delete(bookmark.id),
+                                  ),
+                                ),
+                                onTap: () {
+                                  Navigator.of(sheetContext).pop();
+                                  _jumpTo(bookmark.chapterIndex, bookmark.charOffset);
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final AsyncValue<List<Chapter>> chapters = ref.watch(chaptersProvider(widget.bookId));
@@ -287,6 +475,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       appBar: AppBar(
         title: Text(_currentChapterTitle(context), maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: <Widget>[
+          IconButton(
+            tooltip: context.l10n.addBookmark,
+            onPressed: _pages.isEmpty ? null : () => unawaited(_addBookmark()),
+            icon: const Icon(Icons.bookmark_add_outlined),
+          ),
+          IconButton(
+            tooltip: context.l10n.bookmarksTitle,
+            onPressed: _openBookmarks,
+            icon: const Icon(Icons.bookmarks_outlined),
+          ),
           IconButton(
             tooltip: context.l10n.tocTitle,
             onPressed: _chapters.isEmpty ? null : _openToc,
@@ -326,6 +524,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       return Center(child: Text(context.l10n.errorGeneric));
     }
     final Chapter chapter = chapters[_chapterIndex.clamp(0, chapters.length - 1)];
+    _fullText = text;
     final int start = chapter.startOffset.clamp(0, text.length);
     final int end = chapter.endOffset.clamp(start, text.length);
     final String chapterText = text.substring(start, end);
@@ -563,6 +762,62 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           },
         );
       },
+    );
+  }
+}
+
+/// Asks for an optional note before storing a bookmark.
+///
+/// The controller lives in this widget so it is disposed after the dialog
+/// route has finished animating out; disposing it as soon as `showDialog`
+/// returns trips Flutter's `_dependents.isEmpty` assertion.
+class _BookmarkNoteDialog extends StatefulWidget {
+  const _BookmarkNoteDialog({required this.excerpt});
+
+  final String excerpt;
+
+  @override
+  State<_BookmarkNoteDialog> createState() => _BookmarkNoteDialogState();
+}
+
+class _BookmarkNoteDialogState extends State<_BookmarkNoteDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ModooLocalizations strings = context.l10n;
+    return AlertDialog(
+      title: Text(strings.addBookmark),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            widget.excerpt,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            decoration: InputDecoration(hintText: strings.bookmarkNoteHint),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(strings.cancel)),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: Text(strings.save),
+        ),
+      ],
     );
   }
 }

@@ -95,6 +95,27 @@ class ModooLocalizationsEn extends ModooLocalizations {
   String get endOfChapter => 'End of the book';
 
   @override
+  String get bookmarksTitle => 'Bookmarks';
+
+  @override
+  String get addBookmark => 'Bookmark this page';
+
+  @override
+  String get bookmarkAdded => 'Bookmark added';
+
+  @override
+  String get bookmarkDeleted => 'Bookmark deleted';
+
+  @override
+  String get bookmarkNoteHint => 'Note (optional)';
+
+  @override
+  String get noBookmarks => 'No bookmarks yet';
+
+  @override
+  String get save => 'Save';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

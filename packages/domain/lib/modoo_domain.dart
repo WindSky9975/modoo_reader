@@ -6,6 +6,7 @@
 library;
 
 export 'src/book.dart';
+export 'src/bookmark.dart';
 export 'src/chapter.dart';
 export 'src/page_layout.dart';
 export 'src/reader_settings.dart';
