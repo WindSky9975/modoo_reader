@@ -39,6 +39,12 @@ pwsh tool/check.ps1                   # Windows 上等价，另含 print 残留�
 
 **Android SDK 未装**时，除 `build:apk` 外的命令都能跑；构建 APK 前先 `flutter doctor` 全绿。
 
+**Android Studio 直接打开仓库根目录**（不是 `apps/mobile`）：仓库自带运行配置
+`.run/mobile_android_debug.run.xml`，名字叫 `mobile (android debug)`，入口是
+`apps/mobile/lib/main.dart`。Flutter 工具的工作目录由入口所在的 pub root 决定，
+所以从根目录按 ▶ 也能正常构建——不要去根目录手工跑 `flutter run`，它会在仓库根找
+`android/app/build.gradle` 而失败。
+
 **Windows 上跑 `packages/data` 的测试**需要能找到 `sqlite3.dll`：把
 `D:\Download\Scoop\apps\miniconda3\current\Library\bin` 之类含该 DLL 的目录加进 `PATH`，
 或在根 `pubspec.yaml` 的 `hooks.user_defines.sqlite3` 里把 `source` 改成 `process` / 指定路径。
