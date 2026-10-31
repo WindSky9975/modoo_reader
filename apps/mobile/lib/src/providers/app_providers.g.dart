@@ -721,6 +721,79 @@ final class ChaptersFamily extends $Family
   String toString() => r'chaptersProvider';
 }
 
+/// One book's metadata (title, encoding, chapter count).
+
+@ProviderFor(bookById)
+final bookByIdProvider = BookByIdFamily._();
+
+/// One book's metadata (title, encoding, chapter count).
+
+final class BookByIdProvider extends $FunctionalProvider<AsyncValue<Book?>, Book?, FutureOr<Book?>>
+    with $FutureModifier<Book?>, $FutureProvider<Book?> {
+  /// One book's metadata (title, encoding, chapter count).
+  BookByIdProvider._({required BookByIdFamily super.from, required int super.argument})
+    : super(
+        retry: null,
+        name: r'bookByIdProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$bookByIdHash();
+
+  @override
+  String toString() {
+    return r'bookByIdProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<Book?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Book?> create(Ref ref) {
+    final argument = this.argument as int;
+    return bookById(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BookByIdProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$bookByIdHash() => r'12d63fb61b7341db8da867c53866a3505a138120';
+
+/// One book's metadata (title, encoding, chapter count).
+
+final class BookByIdFamily extends $Family with $FunctionalFamilyOverride<FutureOr<Book?>, int> {
+  BookByIdFamily._()
+    : super(
+        retry: null,
+        name: r'bookByIdProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// One book's metadata (title, encoding, chapter count).
+
+  BookByIdProvider call(int bookId) => BookByIdProvider._(argument: bookId, from: this);
+
+  @override
+  String toString() => r'bookByIdProvider';
+}
+
 /// Saved position of one book, if any.
 
 @ProviderFor(readingProgress)

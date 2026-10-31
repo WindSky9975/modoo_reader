@@ -49,6 +49,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   /// Whole book text; needed to slice the next chapter for prefetching.
   String _fullText = '';
 
+  /// Owning scaffold, so the drawer button and the table of contents can open
+  /// the left drawer without a `Builder` in between.
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   /// Tomato-style immersive reading: the top and bottom chrome are hidden by
   /// default and a tap in the middle of the page toggles them.
   bool _chromeVisible = false;
@@ -696,6 +700,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     final AsyncValue<List<Chapter>> chapters = ref.watch(chaptersProvider(widget.bookId));
     final AsyncValue<String> text = ref.watch(bookTextProvider(widget.bookId));
     final ReaderSettings settings = ref.watch(readerSettingsControllerProvider);
+    final String bookTitle = ref.watch(bookByIdProvider(widget.bookId)).value?.title ?? '';
 
     if (chapters.hasValue) {
       _chapters = chapters.requireValue;
@@ -716,6 +721,20 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
 
     return Scaffold(
+      key: _scaffoldKey,
+      // The table of contents slides in from the left, the way the reference
+      // reader opens it; the bottom sheet was too shallow for long books.
+      drawer: _chapters.isEmpty
+          ? null
+          : _TocDrawer(
+              chapters: _chapters,
+              currentIndex: _chapterIndex,
+              bookTitle: bookTitle,
+              onSelected: (int index) {
+                Navigator.of(context).pop();
+                _goToChapter(index);
+              },
+            ),
       body: Stack(
         // Everything lives in positioned children: with a loose Stack the body
         // would be laid out against the top bar's height instead of the screen.
@@ -885,7 +904,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final double width = math.max(80, constraints.maxWidth - _horizontalPadding * 2);
-        final double height = math.max(80, constraints.maxHeight - _verticalPadding * 2);
+        final EdgeInsets insets = MediaQuery.paddingOf(context);
+        final double topInset = math.max(_verticalPadding, insets.top + 8);
+        final double bottomInset = math.max(_verticalPadding, insets.bottom + 8);
+        final double height = math.max(80, constraints.maxHeight - topInset - bottomInset);
         final bool stale =
             _pages.isEmpty ||
             _layoutHash != pageCacheHash(spec, pageWidth: width, pageHeight: height) ||
@@ -968,9 +990,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                   },
                   onPointerCancel: (PointerCancelEvent event) => _tapOrigin = null,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: _horizontalPadding,
-                      vertical: _verticalPadding,
+                    // Keep the first line below the status bar even though the
+                    // chrome is hidden: the page box is measured with the same
+                    // insets, so the layout and the drawing agree.
+                    padding: EdgeInsets.fromLTRB(
+                      _horizontalPadding,
+                      math.max(_verticalPadding, MediaQuery.paddingOf(context).top + 8),
+                      _horizontalPadding,
+                      math.max(_verticalPadding, MediaQuery.paddingOf(context).bottom + 8),
                     ),
                     child: SizedBox.expand(
                       // Long-press selects text and the platform context menu
@@ -1099,38 +1126,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     ref.read(readerSettingsControllerProvider.notifier).setThemeId(next.name);
   }
 
-  void _openToc() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (BuildContext sheetContext) {
-        return SafeArea(
-          child: DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: 0.7,
-            builder: (BuildContext context, ScrollController controller) {
-              return ListView.builder(
-                controller: controller,
-                itemCount: _chapters.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final Chapter chapter = _chapters[index];
-                  return ListTile(
-                    selected: index == _chapterIndex,
-                    title: Text(chapter.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _goToChapter(index);
-                    },
-                  );
-                },
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
+  void _openToc() => _scaffoldKey.currentState?.openDrawer();
 
   void _openSettings() {
     showModalBottomSheet<void>(
@@ -1409,6 +1405,78 @@ class _AnnotationDialogState extends State<_AnnotationDialog> {
 ///
 /// The scan itself is [searchBook] in `modoo_reader_engine` (pure Dart, literal
 /// match); this widget only owns the query text and the result list.
+/// Table of contents, sliding in from the left.
+class _TocDrawer extends StatelessWidget {
+  const _TocDrawer({
+    required this.chapters,
+    required this.currentIndex,
+    required this.bookTitle,
+    required this.onSelected,
+  });
+
+  final List<Chapter> chapters;
+  final int currentIndex;
+  final String bookTitle;
+  final void Function(int index) onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (bookTitle.isNotEmpty)
+                    Text(
+                      bookTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  const SizedBox(height: 2),
+                  Text(
+                    context.l10n.chaptersCount(chapters.length),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                itemCount: chapters.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final bool selected = index == currentIndex;
+                  return ListTile(
+                    dense: true,
+                    selected: selected,
+                    selectedColor: theme.colorScheme.primary,
+                    title: Text(
+                      chapters[index].title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () => onSelected(index),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SearchSheet extends StatefulWidget {
   const _SearchSheet({required this.bookText, required this.chapters, required this.onSelected});
 

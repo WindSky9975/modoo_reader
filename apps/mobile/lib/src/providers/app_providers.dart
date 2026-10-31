@@ -82,6 +82,10 @@ Stream<List<Book>> books(Ref ref) => ref.watch(bookRepositoryProvider).watchAll(
 Future<List<Chapter>> chapters(Ref ref, int bookId) =>
     ref.watch(chapterRepositoryProvider).listForBook(bookId);
 
+/// One book's metadata (title, encoding, chapter count).
+@riverpod
+Future<Book?> bookById(Ref ref, int bookId) => ref.watch(bookRepositoryProvider).findById(bookId);
+
 /// Saved position of one book, if any.
 @riverpod
 Future<ReadingProgress?> readingProgress(Ref ref, int bookId) =>
