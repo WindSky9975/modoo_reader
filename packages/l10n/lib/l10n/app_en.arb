@@ -5,6 +5,48 @@
   "bookshelfEmptyTitle": "No books yet",
   "bookshelfEmptyMessage": "Import a TXT or EPUB file to start reading.",
   "importBook": "Import book",
+  "importInProgress": "Importing…",
+  "importSucceeded": "Imported \"{title}\" with {count} chapters",
+  "@importSucceeded": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importUnsupportedFormat": "This file format is not supported yet.",
+  "importParseFailed": "The file could not be parsed; it may be damaged.",
+  "importStorageFailed": "Could not save the file. Check the free space.",
+  "importFailedGeneric": "Import failed. Please try again.",
+  "chaptersCount": "{count} chapters",
+  "@chaptersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "deleteBookTitle": "Remove this book?",
+  "deleteBookMessage": "\"{title}\" will be removed from the shelf. The file stays on disk.",
+  "@deleteBookMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tocTitle": "Contents",
+  "readerSettings": "Typography",
+  "readerFontSize": "Font size",
+  "readerLineHeight": "Line height",
+  "previousChapter": "Previous",
+  "nextChapter": "Next",
+  "endOfChapter": "End of the book",
   "settingsTitle": "Settings",
   "settingsTheme": "Theme",
   "themeSystem": "Follow system",
@@ -12,7 +54,6 @@
   "themeSepia": "Sepia",
   "themeNight": "Night",
   "themeAmoled": "Black",
-  "importComingSoon": "File import arrives in milestone M1.",
   "retry": "Retry",
   "errorGeneric": "Something went wrong"
 }

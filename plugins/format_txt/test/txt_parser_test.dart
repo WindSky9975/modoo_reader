@@ -71,7 +71,7 @@ void main() {
     }
   });
 
-  test('loadChapter returns exactly the chapter text', () async {
+  test('loadChapter returns the body without the heading line', () async {
     const text = '第一章 甲\n甲内容\n第二章 乙\n乙内容\n';
     final sink = _RecordingSink();
     await parser.import(handleOf(text), sink);
@@ -84,7 +84,7 @@ void main() {
         endOffset: sink.chapters[1].endOffset,
       ),
     );
-    expect(doc.text.trim(), '第二章 乙\n乙内容');
+    expect(doc.text.trim(), '乙内容');
   });
 
   test('import honours cancellation', () async {

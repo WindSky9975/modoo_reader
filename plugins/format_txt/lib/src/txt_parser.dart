@@ -38,7 +38,8 @@ final class TxtFormatParser implements BookFormatParser {
     }
     if (_hasUtf16Bom(head)) {
       return const ProbeResult.unsupported(
-        'UTF-16 text is not supported yet (M1 adds charset_converter)',
+        'UTF-16 text is not supported by the txt plugin yet; the importer '
+        'transcodes it to UTF-8 before probing',
       );
     }
     try {
@@ -46,7 +47,7 @@ final class TxtFormatParser implements BookFormatParser {
       return const ProbeResult(supported: true, confidence: 0.9, detectedEncoding: 'utf-8');
     } on FormatException {
       return const ProbeResult.unsupported(
-        'not valid UTF-8; GBK and other legacy encodings arrive in M1',
+        'not valid UTF-8; the importer transcodes legacy encodings before probing',
       );
     }
   }
@@ -81,10 +82,12 @@ final class TxtFormatParser implements BookFormatParser {
       totalWords += chapterWords;
     }
 
-    void onLine(String line, int lineStart) {
+    /// Chapters hold body text only: the heading line is the chapter title, so
+    /// the reader can render it as a heading without showing it twice.
+    void onLine(String line, int lineStart, int nextLineStart) {
       if (_isHeading(line, maxTitleLength)) {
         emitChapter(lineStart);
-        chapterStart = lineStart;
+        chapterStart = nextLineStart;
         chapterTitle = line.trim();
         chapterWords = 0;
       } else {
@@ -117,7 +120,7 @@ final class TxtFormatParser implements BookFormatParser {
         final line = pending.substring(start, newline);
         final lineStart = consumed;
         consumed += line.length + 1;
-        onLine(line, lineStart);
+        onLine(line, lineStart, consumed);
         start = newline + 1;
         newline = pending.indexOf('\n', start);
       }
@@ -129,7 +132,7 @@ final class TxtFormatParser implements BookFormatParser {
     }
 
     if (pending.isNotEmpty) {
-      onLine(pending, consumed);
+      onLine(pending, consumed, consumed + pending.length);
       consumed += pending.length;
     }
     emitChapter(consumed);

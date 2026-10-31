@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modoo_core/modoo_core.dart';
@@ -17,6 +19,11 @@ Future<void> main() async {
   final supportDir = await getApplicationSupportDirectory();
   final database = AppDatabase.openAt(p.join(supportDir.path, 'modoo_reader.sqlite'));
 
+  // Imported books are copied into our own UTF-8 library, so the app never
+  // depends on the picker's transient cache path staying alive.
+  final libraryDir = Directory(p.join(supportDir.path, 'library'));
+  await libraryDir.create(recursive: true);
+
   final registry = PluginRegistry(plugins: buildPluginList(), logger: logger);
   await registry.initialize();
 
@@ -25,6 +32,7 @@ Future<void> main() async {
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
         pluginRegistryProvider.overrideWithValue(registry),
+        libraryDirectoryProvider.overrideWithValue(libraryDir),
       ],
       child: const ModooApp(),
     ),

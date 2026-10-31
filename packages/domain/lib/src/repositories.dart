@@ -18,11 +18,17 @@ abstract interface class BookRepository {
   Future<void> softDelete(int id);
 }
 
-/// Read contract for chapters.
+/// Read/write contract for chapters.
 abstract interface class ChapterRepository {
   Future<List<Chapter>> listForBook(int bookId);
 
   Future<Chapter?> findAt(int bookId, int index);
+
+  /// Replaces every chapter of [bookId] in one transaction.
+  ///
+  /// Used by import and by re-import after a parser upgrade; callers pass
+  /// chapters in reading order and must not mix books.
+  Future<void> replaceAll(int bookId, List<Chapter> chapters);
 }
 
 /// Read/write contract for reading position.

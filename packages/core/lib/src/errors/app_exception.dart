@@ -1,7 +1,7 @@
 /// The closed set of failures the app knows how to present to a user.
 ///
 /// Every layer translates low-level failures into exactly one of these before
-/// they cross a boundary (CODE_STYLE §11, appendix B.3). A `catch (e)` that
+/// they cross a boundary (CODE_STYLE 搂11, appendix B.3). A `catch (e)` that
 /// rethrows a raw `FileSystemException` is a review blocker.
 sealed class AppException implements Exception {
   const AppException(this.message, {this.cause, this.stackTrace});
@@ -25,16 +25,20 @@ sealed class AppException implements Exception {
 final class StorageException extends AppException {
   const StorageException(super.message, {super.cause, super.stackTrace});
 
+  static const String codeValue = 'storage';
+
   @override
-  String get code => 'storage';
+  String get code => codeValue;
 }
 
 /// A file was readable but its content was invalid (truncated, malformed).
 final class ParseException extends AppException {
   const ParseException(super.message, {super.cause, super.stackTrace});
 
+  static const String codeValue = 'parse';
+
   @override
-  String get code => 'parse';
+  String get code => codeValue;
 }
 
 /// No plugin claims the format, or the plugin refused it.
@@ -43,8 +47,10 @@ final class UnsupportedFormatException extends AppException {
 
   final String? formatId;
 
+  static const String codeValue = 'unsupported_format';
+
   @override
-  String get code => 'unsupported_format';
+  String get code => codeValue;
 }
 
 /// A network request failed or was cancelled.
@@ -53,8 +59,10 @@ final class NetworkException extends AppException {
 
   final int? statusCode;
 
+  static const String codeValue = 'network';
+
   @override
-  String get code => 'network';
+  String get code => codeValue;
 }
 
 /// A plugin misbehaved: bad manifest, failed registration, contract violation.
@@ -63,14 +71,18 @@ final class PluginException extends AppException {
 
   final String? pluginId;
 
+  static const String codeValue = 'plugin';
+
   @override
-  String get code => 'plugin';
+  String get code => codeValue;
 }
 
 /// WebDAV sync failed (transport, auth, remote conflict).
 final class SyncException extends AppException {
   const SyncException(super.message, {super.cause, super.stackTrace});
 
+  static const String codeValue = 'sync';
+
   @override
-  String get code => 'sync';
+  String get code => codeValue;
 }

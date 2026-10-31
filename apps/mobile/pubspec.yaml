@@ -19,6 +19,10 @@ dependencies:
   path: ^1.9.0
   path_provider: ^2.1.5
   sqlite3_flutter_libs: ^0.5.24
+  # File picking is a platform plugin, so it stays in the app shell and never
+  # in a shared package (THIRD_PARTY.md). Charset decoding is pure Dart and
+  # lives in modoo_core instead (see ADR-0011).
+  file_picker: ^11.0.3
 
   modoo_core:
     path: ../../packages/core

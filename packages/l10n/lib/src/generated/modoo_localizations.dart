@@ -124,6 +124,114 @@ abstract class ModooLocalizations {
   /// **'导入书籍'**
   String get importBook;
 
+  /// Shown while a picked file is being imported.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在导入…'**
+  String get importInProgress;
+
+  /// Confirmation after an import finished.
+  ///
+  /// In zh, this message translates to:
+  /// **'已导入《{title}》，共 {count} 章'**
+  String importSucceeded(String title, int count);
+
+  /// Import failed: no plugin handles the extension.
+  ///
+  /// In zh, this message translates to:
+  /// **'这个文件格式暂时不支持。'**
+  String get importUnsupportedFormat;
+
+  /// Import failed: the file was readable but invalid.
+  ///
+  /// In zh, this message translates to:
+  /// **'文件内容解析失败，文件可能已损坏。'**
+  String get importParseFailed;
+
+  /// Import failed: copying the book into the library failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存文件失败，请检查存储空间。'**
+  String get importStorageFailed;
+
+  /// Import failed for an unexpected reason.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入失败，请重试。'**
+  String get importFailedGeneric;
+
+  /// Chapter count shown next to a shelf item.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 章'**
+  String chaptersCount(int count);
+
+  /// Destructive action label.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除'**
+  String get delete;
+
+  /// Dismiss a dialog without doing anything.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消'**
+  String get cancel;
+
+  /// Confirmation dialog title for removing a book.
+  ///
+  /// In zh, this message translates to:
+  /// **'移除这本书？'**
+  String get deleteBookTitle;
+
+  /// Confirmation dialog body; explains that the file stays.
+  ///
+  /// In zh, this message translates to:
+  /// **'《{title}》会从书架移除，文件本身不会被删除。'**
+  String deleteBookMessage(String title);
+
+  /// Title of the table of contents sheet.
+  ///
+  /// In zh, this message translates to:
+  /// **'目录'**
+  String get tocTitle;
+
+  /// Title of the reader typography sheet.
+  ///
+  /// In zh, this message translates to:
+  /// **'排版'**
+  String get readerSettings;
+
+  /// Label of the font size slider.
+  ///
+  /// In zh, this message translates to:
+  /// **'字号'**
+  String get readerFontSize;
+
+  /// Label of the line height slider.
+  ///
+  /// In zh, this message translates to:
+  /// **'行距'**
+  String get readerLineHeight;
+
+  /// Jump to the previous chapter.
+  ///
+  /// In zh, this message translates to:
+  /// **'上一章'**
+  String get previousChapter;
+
+  /// Jump to the next chapter.
+  ///
+  /// In zh, this message translates to:
+  /// **'下一章'**
+  String get nextChapter;
+
+  /// Shown at the end of the last chapter.
+  ///
+  /// In zh, this message translates to:
+  /// **'本章结束'**
+  String get endOfChapter;
+
   /// Title of the settings tab.
   ///
   /// In zh, this message translates to:
@@ -165,12 +273,6 @@ abstract class ModooLocalizations {
   /// In zh, this message translates to:
   /// **'纯黑'**
   String get themeAmoled;
-
-  /// Shown when the import button is tapped before M1 ships.
-  ///
-  /// In zh, this message translates to:
-  /// **'文件导入将在 M1 里程碑提供。'**
-  String get importComingSoon;
 
   /// Generic retry button.
   ///

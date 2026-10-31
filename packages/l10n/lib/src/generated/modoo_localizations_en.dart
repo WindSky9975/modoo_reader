@@ -26,6 +26,66 @@ class ModooLocalizationsEn extends ModooLocalizations {
   String get importBook => 'Import book';
 
   @override
+  String get importInProgress => 'Importing…';
+
+  @override
+  String importSucceeded(String title, int count) {
+    return 'Imported \"$title\" with $count chapters';
+  }
+
+  @override
+  String get importUnsupportedFormat => 'This file format is not supported yet.';
+
+  @override
+  String get importParseFailed => 'The file could not be parsed; it may be damaged.';
+
+  @override
+  String get importStorageFailed => 'Could not save the file. Check the free space.';
+
+  @override
+  String get importFailedGeneric => 'Import failed. Please try again.';
+
+  @override
+  String chaptersCount(int count) {
+    return '$count chapters';
+  }
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get deleteBookTitle => 'Remove this book?';
+
+  @override
+  String deleteBookMessage(String title) {
+    return '\"$title\" will be removed from the shelf. The file stays on disk.';
+  }
+
+  @override
+  String get tocTitle => 'Contents';
+
+  @override
+  String get readerSettings => 'Typography';
+
+  @override
+  String get readerFontSize => 'Font size';
+
+  @override
+  String get readerLineHeight => 'Line height';
+
+  @override
+  String get previousChapter => 'Previous';
+
+  @override
+  String get nextChapter => 'Next';
+
+  @override
+  String get endOfChapter => 'End of the book';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -45,9 +105,6 @@ class ModooLocalizationsEn extends ModooLocalizations {
 
   @override
   String get themeAmoled => 'Black';
-
-  @override
-  String get importComingSoon => 'File import arrives in milestone M1.';
 
   @override
   String get retry => 'Retry';

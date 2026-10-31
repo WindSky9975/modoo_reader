@@ -26,6 +26,66 @@ class ModooLocalizationsZh extends ModooLocalizations {
   String get importBook => '导入书籍';
 
   @override
+  String get importInProgress => '正在导入…';
+
+  @override
+  String importSucceeded(String title, int count) {
+    return '已导入《$title》，共 $count 章';
+  }
+
+  @override
+  String get importUnsupportedFormat => '这个文件格式暂时不支持。';
+
+  @override
+  String get importParseFailed => '文件内容解析失败，文件可能已损坏。';
+
+  @override
+  String get importStorageFailed => '保存文件失败，请检查存储空间。';
+
+  @override
+  String get importFailedGeneric => '导入失败，请重试。';
+
+  @override
+  String chaptersCount(int count) {
+    return '$count 章';
+  }
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get deleteBookTitle => '移除这本书？';
+
+  @override
+  String deleteBookMessage(String title) {
+    return '《$title》会从书架移除，文件本身不会被删除。';
+  }
+
+  @override
+  String get tocTitle => '目录';
+
+  @override
+  String get readerSettings => '排版';
+
+  @override
+  String get readerFontSize => '字号';
+
+  @override
+  String get readerLineHeight => '行距';
+
+  @override
+  String get previousChapter => '上一章';
+
+  @override
+  String get nextChapter => '下一章';
+
+  @override
+  String get endOfChapter => '本章结束';
+
+  @override
   String get settingsTitle => '设置';
 
   @override
@@ -45,9 +105,6 @@ class ModooLocalizationsZh extends ModooLocalizations {
 
   @override
   String get themeAmoled => '纯黑';
-
-  @override
-  String get importComingSoon => '文件导入将在 M1 里程碑提供。';
 
   @override
   String get retry => '重试';

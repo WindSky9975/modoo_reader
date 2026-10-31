@@ -30,6 +30,33 @@ final class DriftChapterRepository implements ChapterRepository {
     return row == null ? null : _toEntity(row);
   }
 
+  @override
+  Future<void> replaceAll(int bookId, List<Chapter> chapters) async {
+    await _db.transaction(() async {
+      await (_db.delete(_db.chapters)..where((Chapters t) => t.bookId.equals(bookId))).go();
+      if (chapters.isEmpty) {
+        return;
+      }
+      await _db.batch((Batch batch) {
+        batch.insertAll(
+          _db.chapters,
+          chapters
+              .map(
+                (Chapter chapter) => ChaptersCompanion.insert(
+                  bookId: bookId,
+                  idx: chapter.index,
+                  title: chapter.title,
+                  startOffset: chapter.startOffset,
+                  endOffset: chapter.endOffset,
+                  wordCount: Value<int>(chapter.wordCount),
+                ),
+              )
+              .toList(growable: false),
+        );
+      });
+    });
+  }
+
   Chapter _toEntity(ChapterRow row) => Chapter(
     id: row.id,
     bookId: row.bookId,

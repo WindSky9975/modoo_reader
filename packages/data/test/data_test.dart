@@ -79,6 +79,27 @@ void main() {
     expect((await chapters.findAt(bookId, 1))!.title, '第 1 章');
   });
 
+  test('replaceAll swaps every chapter of one book atomically', () async {
+    final bookId = await books.insert(_book());
+    await chapters.replaceAll(bookId, <Chapter>[
+      _chapter(bookId, 0, '楔子', 0, 100),
+      _chapter(bookId, 1, '第一章', 100, 400),
+    ]);
+    await chapters.replaceAll(bookId, <Chapter>[_chapter(bookId, 0, '只有一章', 0, 50)]);
+
+    final list = await chapters.listForBook(bookId);
+    expect(list, hasLength(1));
+    expect(list.single.title, '只有一章');
+  });
+
+  test('replaceAll with an empty list clears the chapters', () async {
+    final bookId = await books.insert(_book());
+    await chapters.replaceAll(bookId, <Chapter>[_chapter(bookId, 0, '第一章', 0, 10)]);
+    await chapters.replaceAll(bookId, const <Chapter>[]);
+
+    expect(await chapters.listForBook(bookId), isEmpty);
+  });
+
   test('progress saves bump the revision and can be read back', () async {
     final bookId = await books.insert(_book());
     final first = ReadingProgress(
@@ -107,4 +128,14 @@ Book _book() => Book(
   filePath: '/books/shanhai.txt',
   fileSizeBytes: 2048,
   addedAt: DateTime.utc(2026, 10, 31),
+);
+
+Chapter _chapter(int bookId, int index, String title, int start, int end) => Chapter(
+  id: index + 1,
+  bookId: bookId,
+  index: index,
+  title: title,
+  startOffset: start,
+  endOffset: end,
+  wordCount: end - start,
 );

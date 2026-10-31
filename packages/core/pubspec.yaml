@@ -1,4 +1,4 @@
-﻿name: modoo_core
+name: modoo_core
 description: "Platform-agnostic foundations: errors, logging, platform ports."
 version: 0.1.0
 publish_to: none
@@ -7,6 +7,11 @@ environment:
   sdk: ^3.9.0
 
 resolution: workspace
+
+dependencies:
+  # Pure Dart GBK decoding. MPL-2.0, file-level copyleft only: we never modify
+  # its sources and record the license in THIRD_PARTY.md (ADR-0011).
+  enough_convert: ^1.7.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0
