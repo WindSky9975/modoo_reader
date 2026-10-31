@@ -150,6 +150,27 @@
   "@save": {
     "description": "Confirm button of dialogs that store input."
   },
+  "searchTitle": "搜索",
+  "@searchTitle": {
+    "description": "Tooltip of the in-book search button."
+  },
+  "searchHint": "搜索本书",
+  "@searchHint": {
+    "description": "Placeholder of the in-book search field."
+  },
+  "searchNoResults": "没有找到匹配的内容",
+  "@searchNoResults": {
+    "description": "Shown when a search returns nothing."
+  },
+  "searchResults": "{count, plural, other{{count} 个结果}}",
+  "@searchResults": {
+    "description": "Number of search hits.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settingsTitle": "设置",
   "@settingsTitle": {
     "description": "Title of the settings tab."

@@ -88,4 +88,47 @@ void main() {
       expect(const LayoutSpec().layoutHash, lessThan(1 << 32));
     });
   });
+
+  group('searchBook', () {
+    const splitter = ChapterSplitter();
+
+    test('returns hits in reading order with chapter-relative offsets', () {
+      final chapters = splitter.split(_book);
+      final hits = searchBook(text: _book, chapters: chapters, query: '城');
+      expect(hits, isNotEmpty);
+      int previous = -1;
+      for (final hit in hits) {
+        final chapter = chapters[hit.chapterIndex];
+        final absolute = chapter.startOffset + hit.charOffset;
+        expect(_book.substring(absolute, absolute + hit.length), '城');
+        expect(absolute, greaterThan(previous));
+        previous = absolute;
+      }
+    });
+
+    test('is case-insensitive and literal', () {
+      const book = 'Chapter One\nhello world\nhello.*\n';
+      final chapters = splitter.split(book);
+      expect(searchBook(text: book, chapters: chapters, query: 'HELLO'), hasLength(2));
+      expect(searchBook(text: book, chapters: chapters, query: 'hello.*'), hasLength(1));
+    });
+
+    test('returns nothing for a blank query', () {
+      final chapters = splitter.split(_book);
+      expect(searchBook(text: _book, chapters: chapters, query: '   '), isEmpty);
+    });
+
+    test('respects maxHits', () {
+      final chapters = splitter.split(_book);
+      final hits = searchBook(text: _book, chapters: chapters, query: '，', maxHits: 1);
+      expect(hits, hasLength(1));
+    });
+
+    test('snippets replace newlines so each hit stays on one line', () {
+      final chapters = splitter.split(_book);
+      final hits = searchBook(text: _book, chapters: chapters, query: '风从北面来');
+      expect(hits, hasLength(1));
+      expect(hits.single.snippet, isNot(contains('\n')));
+    });
+  });
 }

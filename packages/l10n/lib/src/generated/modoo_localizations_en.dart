@@ -116,6 +116,26 @@ class ModooLocalizationsEn extends ModooLocalizations {
   String get save => 'Save';
 
   @override
+  String get searchTitle => 'Search';
+
+  @override
+  String get searchHint => 'Search this book';
+
+  @override
+  String get searchNoResults => 'No matches';
+
+  @override
+  String searchResults(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '1 result',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

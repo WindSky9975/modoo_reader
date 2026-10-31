@@ -116,6 +116,21 @@ class ModooLocalizationsZh extends ModooLocalizations {
   String get save => '保存';
 
   @override
+  String get searchTitle => '搜索';
+
+  @override
+  String get searchHint => '搜索本书';
+
+  @override
+  String get searchNoResults => '没有找到匹配的内容';
+
+  @override
+  String searchResults(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count 个结果');
+    return '$_temp0';
+  }
+
+  @override
   String get settingsTitle => '设置';
 
   @override

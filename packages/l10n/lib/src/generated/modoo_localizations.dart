@@ -292,6 +292,30 @@ abstract class ModooLocalizations {
   /// **'保存'**
   String get save;
 
+  /// Tooltip of the in-book search button.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索'**
+  String get searchTitle;
+
+  /// Placeholder of the in-book search field.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索本书'**
+  String get searchHint;
+
+  /// Shown when a search returns nothing.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有找到匹配的内容'**
+  String get searchNoResults;
+
+  /// Number of search hits.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count, plural, other{{count} 个结果}}'**
+  String searchResults(int count);
+
   /// Title of the settings tab.
   ///
   /// In zh, this message translates to:

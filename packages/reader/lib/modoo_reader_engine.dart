@@ -8,3 +8,4 @@ library;
 export 'src/chapter_splitter.dart';
 export 'src/layout_spec.dart';
 export 'src/pagination.dart';
+export 'src/search.dart';

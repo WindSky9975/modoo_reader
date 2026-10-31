@@ -447,6 +447,24 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
   }
 
+  void _openSearch() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) {
+        return _SearchSheet(
+          bookText: _fullText,
+          chapters: _chapters,
+          onSelected: (int chapterIndex, int charOffset) {
+            Navigator.of(sheetContext).pop();
+            _jumpTo(chapterIndex, charOffset);
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final AsyncValue<List<Chapter>> chapters = ref.watch(chaptersProvider(widget.bookId));
@@ -476,24 +494,46 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         title: Text(_currentChapterTitle(context), maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: <Widget>[
           IconButton(
-            tooltip: context.l10n.addBookmark,
-            onPressed: _pages.isEmpty ? null : () => unawaited(_addBookmark()),
-            icon: const Icon(Icons.bookmark_add_outlined),
-          ),
-          IconButton(
-            tooltip: context.l10n.bookmarksTitle,
-            onPressed: _openBookmarks,
-            icon: const Icon(Icons.bookmarks_outlined),
+            tooltip: context.l10n.searchTitle,
+            onPressed: _fullText.isEmpty ? null : _openSearch,
+            icon: const Icon(Icons.search),
           ),
           IconButton(
             tooltip: context.l10n.tocTitle,
             onPressed: _chapters.isEmpty ? null : _openToc,
             icon: const Icon(Icons.list),
           ),
-          IconButton(
+          // Icon buttons crowd the chapter title out of the bar, so the
+          // secondary actions live in an overflow menu.
+          PopupMenuButton<void>(
             tooltip: context.l10n.readerSettings,
-            onPressed: _openSettings,
-            icon: const Icon(Icons.format_size),
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<void>>[
+              PopupMenuItem<void>(
+                enabled: _pages.isNotEmpty,
+                onTap: () => unawaited(_addBookmark()),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.bookmark_add_outlined),
+                  title: Text(context.l10n.addBookmark),
+                ),
+              ),
+              PopupMenuItem<void>(
+                onTap: _openBookmarks,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.bookmarks_outlined),
+                  title: Text(context.l10n.bookmarksTitle),
+                ),
+              ),
+              PopupMenuItem<void>(
+                onTap: _openSettings,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.format_size),
+                  title: Text(context.l10n.readerSettings),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -604,12 +644,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       vertical: _verticalPadding,
                     ),
                     child: SizedBox.expand(
-                      child: Text(
-                        text.substring(from, to).trim(),
-                        style: TextStyle(
-                          fontSize: settings.fontSize,
-                          height: settings.lineHeight,
-                          letterSpacing: 0.2,
+                      // Long-press selects text and the platform context menu
+                      // offers copy; taps still reach the GestureDetector above.
+                      child: SelectionArea(
+                        child: Text(
+                          text.substring(from, to).trim(),
+                          style: TextStyle(
+                            fontSize: settings.fontSize,
+                            height: settings.lineHeight,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ),
                     ),
@@ -818,6 +862,113 @@ class _BookmarkNoteDialogState extends State<_BookmarkNoteDialog> {
           child: Text(strings.save),
         ),
       ],
+    );
+  }
+}
+
+/// Full-text search over one book.
+///
+/// The scan itself is [searchBook] in `modoo_reader_engine` (pure Dart, literal
+/// match); this widget only owns the query text and the result list.
+class _SearchSheet extends StatefulWidget {
+  const _SearchSheet({required this.bookText, required this.chapters, required this.onSelected});
+
+  final String bookText;
+  final List<Chapter> chapters;
+  final void Function(int chapterIndex, int charOffset) onSelected;
+
+  @override
+  State<_SearchSheet> createState() => _SearchSheetState();
+}
+
+class _SearchSheetState extends State<_SearchSheet> {
+  final TextEditingController _query = TextEditingController();
+  List<SearchHit> _hits = const <SearchHit>[];
+  bool _searched = false;
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  void _run(String value) {
+    final String query = value.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _hits = const <SearchHit>[];
+        _searched = false;
+      });
+      return;
+    }
+    final List<ChapterSpan> spans = widget.chapters
+        .map(
+          (Chapter chapter) => ChapterSpan(
+            index: chapter.index,
+            title: chapter.title,
+            startOffset: chapter.startOffset,
+            endOffset: chapter.endOffset,
+          ),
+        )
+        .toList(growable: false);
+    setState(() {
+      _hits = searchBook(text: widget.bookText, chapters: spans, query: query);
+      _searched = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ModooLocalizations strings = context.l10n;
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.7,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: TextField(
+                controller: _query,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: strings.searchHint,
+                  prefixIcon: const Icon(Icons.search),
+                ),
+                onChanged: _run,
+                onSubmitted: _run,
+              ),
+            ),
+            if (_searched)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text(
+                  _hits.isEmpty ? strings.searchNoResults : strings.searchResults(_hits.length),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _hits.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final SearchHit hit = _hits[index];
+                  return ListTile(
+                    dense: true,
+                    title: Text(hit.snippet, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      '${hit.chapterTitle} · ${hit.charOffset + 1}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () => widget.onSelected(hit.chapterIndex, hit.charOffset),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
