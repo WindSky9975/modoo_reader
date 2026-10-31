@@ -78,6 +78,8 @@ dart run tool/tasks.dart check     # format --set-exit-if-changed + analyze + te
 
 单人阶段只需要「防手滑」的最小保护。**不要**打开 Require a pull request —— 那会让直接提交 `main` 变成不可能，与 §1 冲突。
 
+**当前状态（2026-10-31 已通过 `gh api` 生效）**：`allow_force_pushes=false`、`allow_deletions=false`、`enforce_admins=false`、无 PR 要求 —— 直接 `git push origin main` 仍然可用（已实测）。
+
 | 选项 | 值 | 为什么 |
 | --- | --- | --- |
 | Allow force pushes | ❌ | 硬性禁止，保护公共历史 |
@@ -267,7 +269,7 @@ git push origin v0.1.0
 | 默认分支 | `main`（**仓库只有这一个分支**） |
 | 代理 | `http://127.0.0.1:7897`（`git config http.proxy` / `https.proxy`；gh 走 `HTTP_PROXY` / `HTTPS_PROXY` 用户级环境变量） |
 | SSH key | `~/.ssh/google_id_rsa`（GitHub 用这个，不是 `qq_id_rsa`） |
-| gh CLI | `gh 2.103.3`，装在 `D:\Download\Scoop\shims\gh`（scoop 的 `.ps1` shim 不能直接进管道） |
+| gh CLI | `gh 2.103.3`，装在 `D:\Download\Scoop\shims\gh`（scoop 的 `.ps1` shim 不能直接进管道）；已登录 `WindSky9975`，凭据存 Windows 凭据管理器（keyring） |
 | 行尾 | 全仓 LF（见 `.gitattributes`） |
 
 自检：
