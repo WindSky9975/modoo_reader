@@ -9,6 +9,7 @@ import 'package:modoo_reader_engine/modoo_reader_engine.dart';
 import 'package:modoo_ui/modoo_ui.dart';
 
 import '../../providers/app_providers.dart';
+import 'reading_session_recorder.dart';
 
 /// Paginated reader.
 ///
@@ -17,9 +18,17 @@ import '../../providers/app_providers.dart';
 /// `(chapterIndex, charOffset)` so changing the font size never loses the
 /// reader's place.
 class ReaderPage extends ConsumerStatefulWidget {
-  const ReaderPage({super.key, required this.bookId});
+  const ReaderPage({
+    super.key,
+    required this.bookId,
+    this.minimumSession = const Duration(seconds: 5),
+  });
 
   final int bookId;
+
+  /// Sessions shorter than this are not recorded, so a glance at a book does
+  /// not become a row in the statistics.
+  final Duration minimumSession;
 
   @override
   ConsumerState<ReaderPage> createState() => _ReaderPageState();
@@ -61,6 +70,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   Offset? _tapOrigin;
   static const double _tapSlop = 8;
 
+  /// Time spent in this book, flushed to a reading session on [dispose].
+  late final ReadingSessionRecorder _session;
+
+  /// Captured in `initState`; `ref` cannot be used from `dispose`.
+  late final ProgressRepository _progressRepository;
+  late final String _deviceId;
+
   /// Turns `pageTurnId` into the axis a page swipe moves along.
   static Axis _axisFor(String pageTurnId) {
     // Stored values predate the vertical mode: 'slide' meant horizontal.
@@ -70,6 +86,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   @override
   void initState() {
     super.initState();
+    // Read the repositories now: `ref` is not usable once the element starts
+    // tearing down, and both the last progress save and the session flush run
+    // from `dispose`.
+    _session = ReadingSessionRecorder(
+      repository: ref.read(statsRepositoryProvider),
+      bookId: widget.bookId,
+      minimum: widget.minimumSession,
+    )..start(DateTime.now());
+    _progressRepository = ref.read(progressRepositoryProvider);
+    _deviceId = ref.read(deviceIdProvider);
     unawaited(_restorePosition());
   }
 
@@ -77,6 +103,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   void dispose() {
     _prefetchTimer?.cancel();
     _saveProgress();
+    unawaited(_session.flush(DateTime.now()));
     _pageController.dispose();
     super.dispose();
   }
@@ -296,6 +323,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   void _onPageChanged(int index) {
     setState(() => _pageIndex = index);
+    // Characters the reader moved through, for the statistics screen. It is an
+    // upper bound: a page that only got skimmed still counts once.
+    if (index >= 0 && index < _pages.length) {
+      final PageSpan page = _pages[index];
+      _session.addCharacters(page.endOffset - page.startOffset);
+    }
     _saveProgress();
   }
 
@@ -306,15 +339,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     final Chapter chapter = _chapters[_chapterIndex.clamp(0, _chapters.length - 1)];
     final PageSpan page = _pages[_pageIndex.clamp(0, _pages.length - 1)];
     unawaited(
-      ref
-          .read(progressRepositoryProvider)
+      _progressRepository
           .save(
             ReadingProgress(
               bookId: widget.bookId,
               chapterIndex: chapter.index,
               charOffset: chapter.startOffset + page.startOffset,
               updatedAt: DateTime.now().toUtc(),
-              deviceId: ref.read(deviceIdProvider),
+              deviceId: _deviceId,
               pageIndex: _pageIndex,
             ),
           )

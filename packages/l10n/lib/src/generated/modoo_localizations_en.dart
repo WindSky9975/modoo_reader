@@ -198,5 +198,49 @@ class ModooLocalizationsEn extends ModooLocalizations {
   }
 
   @override
+  String get statsTitle => 'Reading stats';
+
+  @override
+  String get statsToday => 'Today';
+
+  @override
+  String get statsWeek => 'Last 7 days';
+
+  @override
+  String get statsTotal => 'All time';
+
+  @override
+  String get statsStreak => 'Streak';
+
+  @override
+  String get statsCharacters => 'Characters';
+
+  @override
+  String statsMinutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String statsHours(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String statsStreakDays(int days) {
+    return '$days days';
+  }
+
+  @override
+  String statsCharactersCount(int count) {
+    return '$count chars';
+  }
+
+  @override
+  String get statsEmpty => 'No reading yet. Read for a while and it shows up here.';
+
+  @override
+  String get statsLastDays => 'Last 7 days';
+
+  @override
   String get errorGeneric => 'Something went wrong';
 }

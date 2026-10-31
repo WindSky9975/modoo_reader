@@ -41,6 +41,12 @@ dependencies:
   modoo_ui:
     path: ../../packages/ui
 
+  # Plugins are pulled in through the generated registry (registry.g.dart), the
+  # only file allowed to import them (CODE_STYLE §3.3). The dependency is still
+  # declared here so the app package resolves.
+  modoo_format_txt:
+    path: ../../plugins/format_txt
+
 dev_dependencies:
   build_runner: ^2.15.0
   flutter_lints: ^6.0.0

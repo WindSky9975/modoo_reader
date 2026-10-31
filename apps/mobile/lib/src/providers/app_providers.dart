@@ -65,6 +65,10 @@ BookmarkRepository bookmarkRepository(Ref ref) =>
 AnnotationRepository annotationRepository(Ref ref) =>
     DriftAnnotationRepository(ref.watch(appDatabaseProvider));
 
+/// Reading sessions, the raw material for the statistics screen.
+@Riverpod(keepAlive: true)
+StatsRepository statsRepository(Ref ref) => DriftStatsRepository(ref.watch(appDatabaseProvider));
+
 /// Measured with `TextPainter`, so it has to run on the UI isolate.
 @Riverpod(keepAlive: true)
 TextLayoutEngine textLayoutEngine(Ref ref) => const TextPainterLayoutEngine();
@@ -100,6 +104,22 @@ Stream<List<Bookmark>> bookmarks(Ref ref, int bookId) =>
 @riverpod
 Stream<List<Annotation>> annotations(Ref ref, int bookId) =>
     ref.watch(annotationRepositoryProvider).watchForBook(bookId);
+
+/// Every reading session, oldest first.
+@riverpod
+Stream<List<ReadingSession>> readingSessions(Ref ref) =>
+    ref.watch(statsRepositoryProvider).watchAll();
+
+/// Sessions folded into the numbers the statistics screen shows.
+///
+/// The fold runs in Dart so that changing how days are bucketed never needs a
+/// database migration; a few thousand rows sum up in well under a millisecond.
+@riverpod
+ReadingStats readingStats(Ref ref) {
+  final List<ReadingSession> sessions =
+      ref.watch(readingSessionsProvider).value ?? const <ReadingSession>[];
+  return summarizeSessions(sessions, today: DateTime.now());
+}
 
 /// The whole book as text, decoded once and cached while reading.
 ///

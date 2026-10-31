@@ -17,8 +17,8 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('schema v4 creates the seven tables', () async {
-    expect(db.schemaVersion, 4);
+  test('schema v5 creates the eight tables', () async {
+    expect(db.schemaVersion, 5);
     final names = await db
         .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
         .map((row) => row.read<String>('name'))
@@ -33,6 +33,7 @@ void main() {
         'app_settings',
         'bookmarks',
         'annotations',
+        'reading_sessions',
       ]),
     );
   });
@@ -287,6 +288,20 @@ void main() {
     expect(listed.single.body, '第二版');
     expect(listed.single.endOffset, 88);
   });
+
+  test('reading sessions are appended and read back in order', () async {
+    final stats = DriftStatsRepository(db);
+    final bookId = await books.insert(_book());
+
+    await stats.add(_session(bookId, DateTime(2026, 10, 31, 9), const Duration(minutes: 30), 1200));
+    await stats.add(_session(bookId, DateTime(2026, 10, 30, 21), const Duration(minutes: 15), 600));
+
+    final sessions = await stats.watchAll().first;
+    expect(sessions, hasLength(2));
+    expect(sessions.first.startedAt, DateTime(2026, 10, 30, 21));
+    expect(sessions.last.characters, 1200);
+    expect(sessions.last.duration, const Duration(minutes: 30));
+  });
 }
 
 Book _book({String path = '/books/shanhai.txt'}) => Book(
@@ -307,6 +322,15 @@ Chapter _chapter(int bookId, int index, String title, int start, int end) => Cha
   endOffset: end,
   wordCount: end - start,
 );
+
+ReadingSession _session(int bookId, DateTime startedAt, Duration duration, int characters) =>
+    ReadingSession(
+      id: 0,
+      bookId: bookId,
+      startedAt: startedAt,
+      endedAt: startedAt.add(duration),
+      characters: characters,
+    );
 
 Bookmark _bookmark(
   int bookId, {

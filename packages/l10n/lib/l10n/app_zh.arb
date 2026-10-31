@@ -256,6 +256,77 @@
       }
     }
   },
+  "statsTitle": "阅读统计",
+  "@statsTitle": {
+    "description": "Title of the statistics screen."
+  },
+  "statsToday": "今日阅读",
+  "@statsToday": {
+    "description": "Reading time today."
+  },
+  "statsWeek": "近 7 天",
+  "@statsWeek": {
+    "description": "Reading time over the trailing seven days."
+  },
+  "statsTotal": "累计阅读",
+  "@statsTotal": {
+    "description": "Reading time since the app was installed."
+  },
+  "statsStreak": "连续阅读",
+  "@statsStreak": {
+    "description": "Consecutive days with reading."
+  },
+  "statsCharacters": "累计字数",
+  "@statsCharacters": {
+    "description": "Characters read over all sessions."
+  },
+  "statsMinutes": "{count} 分钟",
+  "@statsMinutes": {
+    "description": "Duration shorter than an hour.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statsHours": "{hours} 小时 {minutes} 分",
+  "@statsHours": {
+    "description": "Duration of an hour or more.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "statsStreakDays": "{days} 天",
+  "@statsStreakDays": {
+    "description": "Length of the current streak.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "statsCharactersCount": "{count} 字",
+  "@statsCharactersCount": {
+    "description": "Characters read, compact form.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statsEmpty": "还没有阅读记录，读一会儿就会出现在这里。",
+  "@statsEmpty": {
+    "description": "Empty state of the statistics screen."
+  },
+  "statsLastDays": "最近 7 天",
+  "@statsLastDays": {
+    "description": "Heading above the per-day bars."
+  },
   "errorGeneric": "出了点问题",
   "@errorGeneric": {
     "description": "Generic error headline; details stay in the log."

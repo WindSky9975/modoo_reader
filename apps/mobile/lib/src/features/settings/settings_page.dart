@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:modoo_domain/modoo_domain.dart';
 import 'package:modoo_l10n/modoo_l10n.dart';
 import 'package:modoo_ui/modoo_ui.dart';
 
 import '../../providers/app_providers.dart';
+import '../stats/duration_format.dart';
+import '../stats/stats_page.dart';
 
 /// App-wide settings: reading theme today, typography and sync later.
 class SettingsPage extends ConsumerWidget {
@@ -36,9 +39,30 @@ class SettingsPage extends ConsumerWidget {
               ],
             ),
           ),
+          ModooSectionHeader(title: context.l10n.statsTitle),
+          ListTile(
+            leading: const Icon(Icons.insights_outlined),
+            title: Text(context.l10n.statsTitle),
+            subtitle: Text(
+              _statsSubtitle(context, ref),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (BuildContext context) => const StatsPage())),
+          ),
         ],
       ),
     );
+  }
+
+  /// "今日 12 分钟" once there is history, otherwise the empty hint.
+  String _statsSubtitle(BuildContext context, WidgetRef ref) {
+    final ReadingStats stats = ref.watch(readingStatsProvider);
+    if (stats.sessionCount == 0) return context.l10n.statsEmpty;
+    return '${context.l10n.statsToday} ${formatDuration(context, stats.durationOn(DateTime.now()))}';
   }
 
   String _label(BuildContext context, AppThemeVariant variant) => switch (variant) {

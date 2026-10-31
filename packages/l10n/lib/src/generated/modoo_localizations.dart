@@ -436,6 +436,78 @@ abstract class ModooLocalizations {
   /// **'第 {index} 段'**
   String paragraphNumber(int index);
 
+  /// Title of the statistics screen.
+  ///
+  /// In zh, this message translates to:
+  /// **'阅读统计'**
+  String get statsTitle;
+
+  /// Reading time today.
+  ///
+  /// In zh, this message translates to:
+  /// **'今日阅读'**
+  String get statsToday;
+
+  /// Reading time over the trailing seven days.
+  ///
+  /// In zh, this message translates to:
+  /// **'近 7 天'**
+  String get statsWeek;
+
+  /// Reading time since the app was installed.
+  ///
+  /// In zh, this message translates to:
+  /// **'累计阅读'**
+  String get statsTotal;
+
+  /// Consecutive days with reading.
+  ///
+  /// In zh, this message translates to:
+  /// **'连续阅读'**
+  String get statsStreak;
+
+  /// Characters read over all sessions.
+  ///
+  /// In zh, this message translates to:
+  /// **'累计字数'**
+  String get statsCharacters;
+
+  /// Duration shorter than an hour.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 分钟'**
+  String statsMinutes(int count);
+
+  /// Duration of an hour or more.
+  ///
+  /// In zh, this message translates to:
+  /// **'{hours} 小时 {minutes} 分'**
+  String statsHours(int hours, int minutes);
+
+  /// Length of the current streak.
+  ///
+  /// In zh, this message translates to:
+  /// **'{days} 天'**
+  String statsStreakDays(int days);
+
+  /// Characters read, compact form.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 字'**
+  String statsCharactersCount(int count);
+
+  /// Empty state of the statistics screen.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有阅读记录，读一会儿就会出现在这里。'**
+  String get statsEmpty;
+
+  /// Heading above the per-day bars.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近 7 天'**
+  String get statsLastDays;
+
   /// Generic error headline; details stay in the log.
   ///
   /// In zh, this message translates to:

@@ -5,6 +5,7 @@ import 'chapter.dart';
 import 'page_layout.dart';
 import 'reader_settings.dart';
 import 'reading_progress.dart';
+import 'reading_session.dart';
 
 /// Read/write contract for the shelf.
 abstract interface class BookRepository {
@@ -93,4 +94,13 @@ abstract interface class AnnotationRepository {
   Future<int> add(Annotation annotation);
 
   Future<void> delete(int id);
+}
+
+/// Append-only reading sessions, the raw material for [ReadingStats].
+abstract interface class StatsRepository {
+  Future<int> add(ReadingSession session);
+
+  /// All sessions, oldest first. The statistics screen folds them in Dart,
+  /// so changing how time is bucketed needs no migration.
+  Stream<List<ReadingSession>> watchAll();
 }

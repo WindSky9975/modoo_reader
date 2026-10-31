@@ -517,6 +517,52 @@ final class AnnotationRepositoryProvider
 
 String _$annotationRepositoryHash() => r'fa35a76735be719e0f80e3d2507e7c019f5fce0c';
 
+/// Reading sessions, the raw material for the statistics screen.
+
+@ProviderFor(statsRepository)
+final statsRepositoryProvider = StatsRepositoryProvider._();
+
+/// Reading sessions, the raw material for the statistics screen.
+
+final class StatsRepositoryProvider
+    extends $FunctionalProvider<StatsRepository, StatsRepository, StatsRepository>
+    with $Provider<StatsRepository> {
+  /// Reading sessions, the raw material for the statistics screen.
+  StatsRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'statsRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$statsRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<StatsRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  StatsRepository create(Ref ref) {
+    return statsRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(StatsRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<StatsRepository>(value),
+    );
+  }
+}
+
+String _$statsRepositoryHash() => r'caf69defc71873be38131ced6d15a9c2d63ba769';
+
 /// Measured with `TextPainter`, so it has to run on the UI isolate.
 
 @ProviderFor(textLayoutEngine)
@@ -1031,6 +1077,104 @@ final class AnnotationsFamily extends $Family
   @override
   String toString() => r'annotationsProvider';
 }
+
+/// Every reading session, oldest first.
+
+@ProviderFor(readingSessions)
+final readingSessionsProvider = ReadingSessionsProvider._();
+
+/// Every reading session, oldest first.
+
+final class ReadingSessionsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<ReadingSession>>,
+          List<ReadingSession>,
+          Stream<List<ReadingSession>>
+        >
+    with $FutureModifier<List<ReadingSession>>, $StreamProvider<List<ReadingSession>> {
+  /// Every reading session, oldest first.
+  ReadingSessionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'readingSessionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$readingSessionsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<ReadingSession>> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<ReadingSession>> create(Ref ref) {
+    return readingSessions(ref);
+  }
+}
+
+String _$readingSessionsHash() => r'aaa318a380c76791483d3eae77a316cf48778dac';
+
+/// Sessions folded into the numbers the statistics screen shows.
+///
+/// The fold runs in Dart so that changing how days are bucketed never needs a
+/// database migration; a few thousand rows sum up in well under a millisecond.
+
+@ProviderFor(readingStats)
+final readingStatsProvider = ReadingStatsProvider._();
+
+/// Sessions folded into the numbers the statistics screen shows.
+///
+/// The fold runs in Dart so that changing how days are bucketed never needs a
+/// database migration; a few thousand rows sum up in well under a millisecond.
+
+final class ReadingStatsProvider
+    extends $FunctionalProvider<ReadingStats, ReadingStats, ReadingStats>
+    with $Provider<ReadingStats> {
+  /// Sessions folded into the numbers the statistics screen shows.
+  ///
+  /// The fold runs in Dart so that changing how days are bucketed never needs a
+  /// database migration; a few thousand rows sum up in well under a millisecond.
+  ReadingStatsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'readingStatsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$readingStatsHash();
+
+  @$internal
+  @override
+  $ProviderElement<ReadingStats> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ReadingStats create(Ref ref) {
+    return readingStats(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReadingStats value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReadingStats>(value),
+    );
+  }
+}
+
+String _$readingStatsHash() => r'42655227a3884a4d5f44157abb415176c9b68bd0';
 
 /// The whole book as text, decoded once and cached while reading.
 ///

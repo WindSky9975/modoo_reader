@@ -193,5 +193,49 @@ class ModooLocalizationsZh extends ModooLocalizations {
   }
 
   @override
+  String get statsTitle => '阅读统计';
+
+  @override
+  String get statsToday => '今日阅读';
+
+  @override
+  String get statsWeek => '近 7 天';
+
+  @override
+  String get statsTotal => '累计阅读';
+
+  @override
+  String get statsStreak => '连续阅读';
+
+  @override
+  String get statsCharacters => '累计字数';
+
+  @override
+  String statsMinutes(int count) {
+    return '$count 分钟';
+  }
+
+  @override
+  String statsHours(int hours, int minutes) {
+    return '$hours 小时 $minutes 分';
+  }
+
+  @override
+  String statsStreakDays(int days) {
+    return '$days 天';
+  }
+
+  @override
+  String statsCharactersCount(int count) {
+    return '$count 字';
+  }
+
+  @override
+  String get statsEmpty => '还没有阅读记录，读一会儿就会出现在这里。';
+
+  @override
+  String get statsLastDays => '最近 7 天';
+
+  @override
   String get errorGeneric => '出了点问题';
 }

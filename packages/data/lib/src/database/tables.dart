@@ -163,6 +163,25 @@ class Annotations extends Table {
   ];
 }
 
+/// Append-only reading sessions (schema v5).
+///
+/// One row per stretch of reading. Aggregates (today, streak, total) are
+/// computed in Dart from these rows, so changing the definition of "a day"
+/// never needs a migration.
+@DataClassName('ReadingSessionRow')
+class ReadingSessions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  IntColumn get bookId => integer().references(Books, #id)();
+
+  DateTimeColumn get startedAt => dateTime()();
+
+  DateTimeColumn get endedAt => dateTime()();
+
+  /// Characters the reader moved through during the session.
+  IntColumn get characters => integer().withDefault(const Constant(0))();
+}
+
 /// Key/value store for app preferences (schema v2).
 ///
 /// Values are JSON so a new preference never needs a schema change; the keys

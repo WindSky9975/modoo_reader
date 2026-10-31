@@ -13,3 +13,4 @@ export 'src/repositories/drift_chapter_repository.dart';
 export 'src/repositories/drift_page_layout_repository.dart';
 export 'src/repositories/drift_progress_repository.dart';
 export 'src/repositories/drift_settings_repository.dart';
+export 'src/repositories/drift_stats_repository.dart';

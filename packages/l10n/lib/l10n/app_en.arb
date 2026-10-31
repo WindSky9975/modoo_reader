@@ -88,5 +88,48 @@
       }
     }
   },
+  "statsTitle": "Reading stats",
+  "statsToday": "Today",
+  "statsWeek": "Last 7 days",
+  "statsTotal": "All time",
+  "statsStreak": "Streak",
+  "statsCharacters": "Characters",
+  "statsMinutes": "{count} min",
+  "@statsMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statsHours": "{hours} h {minutes} min",
+  "@statsHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "statsStreakDays": "{days} days",
+  "@statsStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "statsCharactersCount": "{count} chars",
+  "@statsCharactersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statsEmpty": "No reading yet. Read for a while and it shows up here.",
+  "statsLastDays": "Last 7 days",
   "errorGeneric": "Something went wrong"
 }
