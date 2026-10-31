@@ -87,7 +87,8 @@ adb shell am start -n com.modooreader.modoo_reader/.MainActivity
 | 你想改 | 去哪里 |
 | --- | --- |
 | 启动流程、路由、插件装配 | `apps/mobile/lib/src/` |
-| 分页算法、章节切分、翻页动画 | `packages/reader/lib/src/` |
+| 分页算法、章节切分、`layoutHash` | `packages/reader/lib/src/`（纯 Dart，不碰 Flutter） |
+| `TextPainter` 测量与分页实现 | `packages/ui/lib/src/pagination/`（必须在 UI isolate） |
 | 数据库表、DAO、迁移 | `packages/data/lib/src/` |
 | 设计 token、主题、通用组件 | `packages/ui/lib/src/` |
 | 插件契约（能力接口） | `packages/plugin_api/lib/` |
@@ -324,3 +325,4 @@ pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生�
 | v1.2 | 2026-10-31 | 新增 `docs/GIT_WORKFLOW.md`（推送、分支、PR、发版）；必读顺序与冲突优先级加入该文档；代码地图与文档同步矩阵补行 |
 | v1.3 | 2026-10-31 | M0 落地后回填：阶段改为「M0 骨架已落地，12 个包」、命令面改 `dart run tool/tasks.dart`（弃用 melos）、注册表路径改 `registry.g.dart` / `buildPluginList()`、首行指向 `CONTRIBUTING.md`、文档同步矩阵把 `melos.yaml` 换成根 `pubspec.yaml` |
 | v1.4 | 2026-10-31 | 单分支策略：§9 改为「允许直接 commit + push `main`，禁止 force-push / 删除 / 移动 tag」；与 `GIT_WORKFLOW.md` v1.1、`CODE_STYLE.md` §14.2 对齐 |
+| v1.5 | 2026-10-31 | M2 分页落地后回填：§4 代码地图把「分页算法（纯 Dart）」与「`TextPainter` 测量（必须在 UI isolate）」拆成两行 |
