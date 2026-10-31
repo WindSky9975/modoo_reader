@@ -9,12 +9,12 @@ import 'package:modoo_domain/modoo_domain.dart';
 /// and flushes it from `dispose`.
 final class ReadingSessionRecorder {
   ReadingSessionRecorder({
-    required StatsRepository repository,
+    required this.repository,
     required this.bookId,
     this.minimum = const Duration(seconds: 5),
-  }) : _repository = repository;
+  });
 
-  final StatsRepository _repository;
+  final StatsRepository repository;
   final int bookId;
 
   /// Anything shorter is a glance, not reading, and is not recorded.
@@ -40,7 +40,7 @@ final class ReadingSessionRecorder {
     _startedAt = null;
     final Duration elapsed = now.difference(startedAt);
     if (elapsed < minimum) return;
-    await _repository.add(
+    await repository.add(
       ReadingSession(
         id: 0,
         bookId: bookId,
