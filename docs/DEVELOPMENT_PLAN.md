@@ -27,7 +27,7 @@
 | D4 | 插件形态 | 编译期 Dart 插件包 + 注册表，中等粒度 | Flutter 无法运行时加载 Dart 代码 |
 | D5 | 插件边界 | 格式解析器 / 书源 / TTS 插件化，排版与阅读 UI 内聚 | 排版是产品命脉，不适合外置 |
 | D6 | 技术栈 | Riverpod + Drift + go_router + freezed | 类型安全、可测试、与插件分层契合 |
-| D7 | 仓库 | melos monorepo | 插件独立版本与独立测试的前提 |
+| D7 | 仓库 | Dart pub workspace monorepo | 插件独立版本与独立测试的前提；melos 8 与 drift_dev 的 `cli_util` 约束冲突，已弃用（见 ADR 变更记录） |
 | D8 | 渲染路线 | 先流式滚动跑通，再自研分页 | 3 个月内不可能同时做对两件事 |
 | D9 | 同步 | 仅 WebDAV（用户自备），无自建后端 | 零运维、零隐私争议 |
 | D10 | 商业模型 | 无广告、无内购、无遥测 | 与 MIT + 开源社区信任一致 |
@@ -268,7 +268,11 @@ modoo_reader/
 ├─ tool/                      # 代码生成、插件脚手架、规则校验
 ├─ .github/workflows/
 ├─ AGENTS.md                  # AI 编码代理操作手册
-├─ melos.yaml
+├─ CONTRIBUTING.md            # 贡献指南
+├─ CODE_OF_CONDUCT.md
+├─ SECURITY.md
+├─ pubspec.yaml               # pub workspace 根：workspace 成员列表
+├─ pubspec.lock               # 全仓唯一 lockfile
 ├─ analysis_options.yaml
 ├─ THIRD_PARTY.md             # 依赖与许可清单
 ├─ CHANGELOG.md
@@ -345,7 +349,7 @@ final class TxtFormatPlugin implements ModooPlugin {
 }
 ```
 
-注册表在启动时装配（入口符号 `buildPluginRegistry()`，由 `tool/gen_registry.dart` 生成，命令 `melos run gen-registry`，`melos run gen` 会带上它，避免手写遗漏）：
+注册表在启动时装配（入口符号 `buildPluginRegistry()`，由 `tool/gen_registry.dart` 生成，命令 `dart run tool/tasks.dart gen:registry`，`dart run tool/tasks.dart gen` 会带上它，避免手写遗漏）：
 
 ```dart
 final registry = buildPluginRegistry(); // 生成文件，勿手改
@@ -723,10 +727,13 @@ gantt
 
 #### M0 · 地基（W1–W2，20h）
 
+> **状态：已完成（2026-10-31）**。除「APK 构建」因本机未装 Android SDK 未验证外，其余验收项均已通过；
+> `custom_lint` 分层规则与 `commitlint` 顺延到 M1 第一步（当前由 review + `analysis_options.yaml` 兜底）。
+
 | 任务 | 产出 | 验收 |
 | --- | --- | --- |
-| 环境与仓库 | Flutter 版本锁定（FVM）、melos 初始化、目录骨架、LICENSE/README 初版 | `melos bootstrap` 成功，CI 绿 |
-| 代码规范 | `analysis_options.yaml`、custom_lint 分层规则、commitlint | 故意写跨层 import 会被 lint 拦住 |
+| 环境与仓库 | Flutter 版本锁定（FVM）、pub workspace 初始化、目录骨架、LICENSE/README 初版 | `flutter pub get` 成功，CI 绿 |
+| 代码规范 | `analysis_options.yaml`、custom_lint 分层规则（M1）、commitlint（M1） | 故意写跨层 import 会被 lint 拦住 |
 | 设计系统 | `ui` 包：色板（含夜间/护眼）、字号阶梯、间距、圆角、3 个基础组件 | 示例页可切换 4 套主题 |
 | 数据层 | Drift schema v1 + DAO + 迁移测试框架 | 单测覆盖 schema |
 | 平台端口 | `FileSystemPort`/`TaskRunner`/`TtsPort` 接口 + 移动端实现 | 真机读写文件通过 |
@@ -967,24 +974,34 @@ CBZ 漫画 → PDF 只读 → MOBI 技术验证（允许失败）→ 仿真翻�
 
 ---
 
-## 10. 下一步 14 天（M0 行动清单）
+## 10. 行动清单（M0 已完成，下一步 M1）
 
-- [ ] **D1**：确认第 0.3 节的 4 个决策（段评范围 / MVP 不含书源 / Web 排后 / 中文名）
-- [ ] **D1**：`flutter --version` 确认工具链，写 `.fvmrc` 锁定版本
+M0 已于 2026-10-31 完成并通过 `dart run tool/tasks.dart check`。下表保留原始计划作为对照，
+`[x]` 为已完成、`[ ]` 为顺延到 M1 的项。
+
+- [x] **D1**：确认第 0.3 节的 4 个决策（段评范围 / MVP 不含书源 / Web 排后 / 中文名「墨读」）
+- [x] **D1**：`flutter --version` 确认工具链（Flutter 3.44.4 / Dart 3.12.2）
 - [ ] **D1**：装 Android SDK（cmdline-tools / platform-tools / platform 35 / build-tools），设 `ANDROID_HOME`，`flutter doctor` 全绿
-- [ ] **D1**：`git init` + 首次提交（LICENSE / README / .gitignore / analysis_options / THIRD_PARTY.md 空表）
-- [ ] **D2**：melos 初始化，建 `apps/mobile` + 5 个核心包空壳
-- [ ] **D2–D3**：`ui` 包：色板（日间/夜间/护眼/羊皮纸）、字号阶梯、主题切换 Demo
-- [ ] **D3–D4**：`data` 包：Drift schema v1 + 迁移测试
-- [ ] **D4–D5**：`core` 包：DI、日志、错误模型、平台端口（路由声明留在 app 壳）
-- [ ] **D5**：GitHub Actions：analyze + test（先在本地脚本跑通）
-- [ ] **D6–D7**：空书架页 + 导入入口 + 设置骨架（假数据）
+- [x] **D1**：`git init` + 首次提交（LICENSE / README / .gitignore / analysis_options / 治理文件）
+- [x] **D2**：pub workspace 初始化（替代 melos），建 `apps/mobile` + 10 个包 + 1 个插件
+- [x] **D2–D3**：`ui` 包：色板（日间/夜间/护眼/纯黑）、间距与圆角 token、主题切换 Demo
+- [x] **D3–D4**：`data` 包：Drift schema v1 + 迁移骨架 + 仓库实现
+- [x] **D4–D5**：`core` 包：DI、日志、错误模型、平台端口（路由声明留在 app 壳）
+- [x] **D5**：GitHub Actions：analyze + test + 生成物 diff 检查
+- [x] **D6–D7**：空书架页 + 导入入口（占位）+ 设置骨架（主题切换）
 - [ ] **D8–D9**：TXT 编码嗅探技术验证（准备 20 个样本，对比 2 个候选库）
 - [ ] **D9**：EPUB 解析候选评估（`epubx` 能否满足 spine + 中文）
 - [ ] **D10–D11**：导入 TXT → 切章 → 落库 的纵向切片（打通一条真实链路）
 - [ ] **D12**：阅读页显示第一章纯文本（滚动即可，不排版）
-- [ ] **D13**：M0 评审：架构是否站得住？要不要调整？
+- [ ] **D13**：M1 中期评审：骨架是否站得住？要不要调整？
 - [ ] **D14**：buffer / 补测试 / 发 `v0.0.1` 内部版本
+
+**M1 开工前的三件事**（M0 留下的债，按顺序做）：
+
+1. 装 Android SDK 并跑通 `flutter build apk --debug` —— 否则所有 UI 改动都只能靠 widget 测试验证。
+2. 补 `tool/lints`（custom_lint：`layer_dependency`、`plugin_import_boundary`、`no_dart_io_in_shared`），
+   让分层规则从「review 靠人」变成「CI 靠机器」。
+3. 接 `file_picker` 做真实文件导入，替换书架上的占位按钮。
 
 ---
 
@@ -1006,7 +1023,7 @@ CBZ 漫画 → PDF 只读 → MOBI 技术验证（允许失败）→ 仿真翻�
 - Flutter 官方文档：<https://docs.flutter.dev>
 - Riverpod：<https://riverpod.dev>
 - Drift：<https://drift.simonbinder.eu>
-- melos：<https://melos.invertase.dev>
+- pub workspaces：<https://dart.dev/tools/pub/workspaces>
 - EPUB 3 规范：<https://www.w3.org/TR/epub-33/>
 - legado（阅读）书源规则参考：<https://github.com/gedoor/legado>
 - QuickJS：<https://bellard.org/quickjs/>
@@ -1020,5 +1037,6 @@ CBZ 漫画 → PDF 只读 → MOBI 技术验证（允许失败）→ 仿真翻�
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
 | v0.1 | 2026-10-31 | 首版：基于两轮需求访谈（产品 9 问 + 技术 9 问）成稿 |
-| v0.2 | 2026-10-31 | 三文档一致性评审修正：分页限定在 UI isolate（`TextPainter` 字体环境）、layoutHash 补全字段（段距/排版开关/字体版本）、依赖表补 `core ← 所有业务包` 与 `source_engine`、注册表统一 `buildPluginRegistry()` + `melos run gen-registry`、覆盖率口径改 `plugins/format_*`、P2 归入 M6；§0.3 的 4 条决策经确认；补 ADR-0009/0010 |
+| v0.2 | 2026-10-31 | 三文档一致性评审修正：分页限定在 UI isolate（`TextPainter` 字体环境）、layoutHash 补全字段（段距/排版开关/字体版本）、依赖表补 `core ← 所有业务包` 与 `source_engine`、注册表统一 `buildPluginRegistry()` + `dart run tool/tasks.dart gen:registry`、覆盖率口径改 `plugins/format_*`、P2 归入 M6；§0.3 的 4 条决策经确认；补 ADR-0009/0010 |
 | v0.3 | 2026-10-31 | 新增 `docs/GIT_WORKFLOW.md`（分支、推送、分支保护、PR、tag 发版、Git 报错处置）；§3.3 目录树与 §7.2 协作规范补引用与执行细则 |
+| v0.4 | 2026-10-31 | M0 落地后回填：D7 由 melos 改为 pub workspace（melos 8 与 `drift_dev` 的 `cli_util` 约束冲突）、目录树补 `CONTRIBUTING/CODE_OF_CONDUCT/SECURITY/pubspec.lock`、§5.3 M0 标记完成、§10 行动清单回填实际进度并列出 M1 开工前债务、附录 B 换掉 melos 链接 |

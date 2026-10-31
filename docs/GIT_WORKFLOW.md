@@ -68,7 +68,7 @@ main ──●──●────●────●────●──▶  �
 ### 2.3 推之前固定跑
 
 ```bash
-melos run check     # format --set-exit-if-changed + analyze + test
+dart run tool/tasks.dart check     # format --set-exit-if-changed + analyze + test
 ```
 
 本地 hook 只是提示，**真正的门是 CI**。跳过 hook 不会让 CI 变绿。
@@ -131,7 +131,7 @@ melos run check     # format --set-exit-if-changed + analyze + test
 ### 5.1 流程
 
 ```
-切分支 → 小步 commit → 本地 melos run check → 开 PR（draft 可选）
+切分支 → 小步 commit → 本地 dart run tool/tasks.dart check → 开 PR（draft 可选）
    → CI 绿 → 自查/评审 → squash merge → 分支自动删除
 ```
 
@@ -144,7 +144,7 @@ melos run check     # format --set-exit-if-changed + analyze + test
 | 内容 | 只做一件事；顺手重构单独开 PR |
 | CI | 全绿才能合并 |
 | 描述 | 必填「为什么 / 怎么验 / 风险」，模板见下 |
-| 生成物 | 改了模型/表/ARB 必须带 `melos run gen` 的结果 |
+| 生成物 | 改了模型/表/ARB 必须带 `dart run tool/tasks.dart gen` 的结果 |
 | 架构变更 | 附 ADR 链接 |
 | 用户可见变更 | `CHANGELOG.md` 有 `Unreleased` 条目 |
 
@@ -158,7 +158,7 @@ melos run check     # format --set-exit-if-changed + analyze + test
 - <要点，3 条以内>
 
 ## 怎么验
-- [ ] `melos run check` 绿
+- [ ] `dart run tool/tasks.dart check` 绿
 - [ ] <手动验证步骤 / 截图 / 录屏>
 
 ## 风险与回滚
@@ -222,7 +222,7 @@ git push origin v0.1.0
   git fetch origin
   git rebase origin/main
   ```
-- rebase 后必须**重跑** `melos run check`，冲突解决很容易引入编译不过的代码。
+- rebase 后必须**重跑** `dart run tool/tasks.dart check`，冲突解决很容易引入编译不过的代码。
 - 冲突解决原则：**保留行为，不要保留文本**。看不懂就问，不要「两边都留下」。
 - 已 push 的分支 rebase 后推送要用 `--force-with-lease`，**永远不要**裸 `--force`。
 
@@ -285,8 +285,8 @@ CI 环境不依赖上面的本地配置；CI 用 `GITHUB_TOKEN` 读仓库，发�
 推送前想一次过，跑这些（CI 跑的就是同一套）：
 
 ```bash
-melos run check        # 主门禁
-melos run gen          # 生成物是否最新（CI 会 diff）
+dart run tool/tasks.dart check        # 主门禁
+dart run tool/tasks.dart gen          # 生成物是否最新（CI 会 diff）
 git diff --check       # 空白字符错误
 git log origin/main..HEAD --oneline   # 确认这次要推的提交
 ```

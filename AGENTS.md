@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> 给在本仓库工作的 AI 编码代理。人类贡献者请看 [docs/CODE_STYLE.md](docs/CODE_STYLE.md)（`CONTRIBUTING.md` 计划在 M3 补齐）。
+> 给在本仓库工作的 AI 编码代理。人类贡献者请看 [docs/CODE_STYLE.md](docs/CODE_STYLE.md) 与 [CONTRIBUTING.md](CONTRIBUTING.md)。
 > 本文件是**操作手册**，不是需求文档。需求与排期见 [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md)。
 
 ---
@@ -13,12 +13,12 @@
 
 | 项 | 状态 |
 | --- | --- |
-| 阶段 | **M0 之前**：只有文档，没有代码 |
-| 已存在 | `docs/DEVELOPMENT_PLAN.md`、`docs/CODE_STYLE.md`、`docs/GIT_WORKFLOW.md`、`AGENTS.md`、`README.md`、`LICENSE` |
-| 未存在 | `apps/`、`packages/`、`plugins/`、`melos.yaml`、`analysis_options.yaml`、CI |
-| 因此 | 提到 `melos run ...` 的命令**现在跑不了**，它们是 M0 建仓后的目标态 |
+| 阶段 | **M0 骨架已落地**：pub workspace monorepo、12 个包（`apps/mobile` + 10 个 `packages/*` + `plugins/format_txt`）、App 壳、CI、工具脚本齐全，`check` 全绿 |
+| 可跑 | `flutter pub get`、`dart run tool/tasks.dart {gen,analyze,test,check}`、`pwsh tool/check.ps1` |
+| 还不能跑 | APK 构建（本机缺 Android SDK）、`docs/plugin-sdk/`（M4 才有内容） |
+| 未完成 | M1 功能：文件选择与导入、阅读页、分页渲染；`docs/plugin-sdk/` 与正式签名 |
 
-**动手写代码前先确认 M0 是否已完成。** 若目录尚不存在，按 `CODE_STYLE.md` §3.1 的结构创建，不要发明第三套目录布局。
+**M0 只是骨架**：书籍导入、阅读页、分页渲染都还没有，`apps/mobile` 只有书架空态与主题切换两个页面。写功能前后都要确认自己在哪个里程碑（[docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) §5）。
 
 ## 2. 必读顺序
 
@@ -43,22 +43,22 @@
 
 首次构建 Android 前必须先装 SDK 并 `flutter doctor` 全绿，否则 APK 相关任务无法验证。
 
-### 3.2 命令（M0 之后可用）
+### 3.2 命令（在仓库根执行）
 
 | 目的 | 命令 |
 | --- | --- |
-| 装依赖 | `melos bootstrap` |
-| 生成代码（改模型/表/ARB/插件后必跑） | `melos run gen`（含 `gen-registry`） |
-| 只重生成插件注册表 | `melos run gen-registry` |
-| 格式化 | `melos run format` |
-| 静态分析 | `melos run analyze` |
-| 全部测试 | `melos run test` |
-| **提交前总检查** | `melos run check`（等价脚本 `pwsh tool/check.ps1`） |
-| 快速核心测试 | `melos run test:core` |
-| 构建 APK | `melos run build:apk` |
+| 装依赖 | `flutter pub get` |
+| 生成代码（改模型/表/ARB/插件后必跑） | `dart run tool/tasks.dart gen`（含 `gen-registry`） |
+| 只重生成插件注册表 | `dart run tool/tasks.dart gen:registry` |
+| 格式化 | `dart run tool/tasks.dart format` |
+| 静态分析 | `dart run tool/tasks.dart analyze` |
+| 全部测试 | `dart run tool/tasks.dart test` |
+| **提交前总检查** | `dart run tool/tasks.dart check`（等价脚本 `pwsh tool/check.ps1`） |
+| 快速核心测试 | `dart run tool/tasks.dart test --scope core,domain,reader,plugin_api,plugin_host,data` |
+| 构建 APK | `dart run tool/tasks.dart build:apk` |
 | 新建插件 | `dart run tool/new_plugin.dart --name format_fb2` |
 
-从**仓库根目录**执行。带参数的命令统一用 `dart run tool/*.dart` 调用，不要依赖 `melos run xxx -- --flag` —— PowerShell 会把 `--` 之后的参数吞掉。
+从**仓库根目录**执行。所有任务都是 `dart run tool/tasks.dart <task>`；带参数的命令直接调用具体脚本（`dart run tool/new_plugin.dart --name x`），不要写成 `melos run xxx -- --flag` 那种形式 —— Windows 上 `--` 之后的参数很容易被吞掉。
 
 ### 3.3 平台注意
 
@@ -87,7 +87,7 @@
 | 推送、分支、PR、发版、Git 报错 | `docs/GIT_WORKFLOW.md` |
 | 架构决策 | `docs/adr/`（新增时按 `NNNN-title.md`） |
 
-**唯一允许 import `plugins/*` 的文件**：`apps/mobile/lib/src/plugins/registry.dart`。这个文件由脚本生成，不要手改。
+**唯一允许 import `plugins/*` 的文件**：`apps/mobile/lib/src/plugins/registry.g.dart`。这个文件由 `dart run tool/gen_registry.dart` 生成，不要手改。
 
 ---
 
@@ -96,7 +96,7 @@
 以下 10 条不因"这次比较特殊"而破例。破了 CI 会拦或 review 会打回。
 
 1. **依赖方向单向**：`plugin_api ← plugins`、`core ← 所有业务包`、`reader` 不碰 `data`、`plugins` 不碰 `core/ui/data`。违反即架构事故。
-2. **生成文件不手改**：`*.g.dart` / `*.freezed.dart` / `lib/generated/` 只由 `melos run gen` 产生。改模型后必须重跑并把生成物一起提交。
+2. **生成文件不手改**：`*.g.dart` / `*.freezed.dart` / `lib/generated/` 只由 `dart run tool/tasks.dart gen` 产生。改模型后必须重跑并把生成物一起提交。
 3. **已发布的数据库迁移永久冻结**：只能追加新分支，不能改历史 `onUpgrade`。
 4. **不新增依赖除非说明理由**：许可证、维护状态、体积、替代方案四问，写进 PR。GPL/AGPL 一律拒绝。
 5. **不弱化 lint**：不加 `analysis_options` 例外，不加无理由的 `// ignore`（必须带规则名 + 原因 + issue）。全仓唯一豁免是附录 A 的 `invalid_annotation_target: ignore`，理由写在原地。
@@ -104,7 +104,7 @@
 7. **阅读热路径零阻塞**：翻页链路上禁止 I/O、禁止大对象分配、禁止同步 DB 查询。
 8. **插件必须纯**：无 UI、无 `BuildContext`、无 `dart:io`、无全局可变状态。
 9. **不内置任何书源、不抓取正版内容**：这是项目法律底线，看到此类 PR 直接关闭。
-10. **提交前 `melos run check` 必须绿**。
+10. **提交前 `dart run tool/tasks.dart check` 必须绿**。
 
 ---
 
@@ -119,8 +119,8 @@
 2. 在 plugins/format_fb2/lib/ 实现 BookFormatParser（只依赖 modoo_plugin_api）
 3. manifest 填 id: modoo.format.fb2、version、sdkConstraint、capabilities；name 只写英文兜底，中文名加到 ARB
 4. test/ 写四类用例：正常 / 损坏 / 超大 / 边界编码，全部纯 Dart 可跑
-5. 跑 melos run gen-registry 重新生成 buildPluginRegistry()（会自动包含新插件）
-6. 跑 melos run test && melos run analyze
+5. 跑 dart run tool/tasks.dart gen:registry 重新生成 buildPluginList()（会自动包含新插件）
+6. 跑 dart run tool/tasks.dart test && dart run tool/tasks.dart analyze
 ```
 
 **不要**：改 `plugin_api` 加能力（除非任务明确要求，那就先写 ADR）、在插件里 import `modoo_core`、在插件里弹 UI。
@@ -145,8 +145,8 @@
 2. 在 AppDatabase 的 tables 列表注册
 3. schemaVersion + 1，在 onUpgrade 追加新分支（不要动历史分支）
 4. test/migrations/ 放旧版本 DB 样本，断言迁移后数据正确
-5. melos run gen
-6. melos run test:core
+5. dart run tool/tasks.dart gen
+6. dart run tool/tasks.dart test --scope core,domain,reader,plugin_api,plugin_host,data
 ```
 
 **不要**：改已有列的语义、删列、重命名列而不写迁移、在 DAO 外拼 SQL。
@@ -171,7 +171,7 @@ class ReaderController extends _$ReaderController {
 ```
 1. packages/l10n/lib/l10n/app_zh.arb 加 key（模板文件）
 2. app_en.arb 加对应英文（占位也要有，否则 CI 失败）
-3. melos run gen
+3. dart run tool/tasks.dart gen
 4. 用 context.l10n.xxx 引用；带参数用占位符，不要字符串拼接
 ```
 
@@ -201,8 +201,8 @@ class ReaderController extends _$ReaderController {
 
 | 陷阱 | 症状 | 正确做法 |
 | --- | --- | --- |
-| 手改 `*.g.dart` | 下次 `gen` 后被覆盖，改动离奇消失 | 改源模型后重跑 `melos run gen` |
-| 忘跑 `gen` 就提交 | CI 报「生成物有未提交 diff」 | 提交前固定执行 `melos run gen` |
+| 手改 `*.g.dart` | 下次 `gen` 后被覆盖，改动离奇消失 | 改源模型后重跑 `dart run tool/tasks.dart gen` |
+| 忘跑 `gen` 就提交 | CI 报「生成物有未提交 diff」 | 提交前固定执行 `dart run tool/tasks.dart gen` |
 | `dart:io` 进了共享包 | Web 端构建失败（未来） | 用 `FileSystemPort`，只在移动/桌面实现里 import |
 | `ref` 跨 async gap | 偶发 `StateError: disposed` | `if (!ref.mounted) return;` |
 | `context` 跨 async gap | `use_build_context_synchronously` 警告 | `if (!context.mounted) return;` |
@@ -212,7 +212,7 @@ class ReaderController extends _$ReaderController {
 | 改 `layoutHash` 组成却不说明 | 用户首次翻页全量重排，体感变慢 | PR 里标注，并把重排耗时测出来 |
 | 用 `print` 调试完忘了删 | 日志泄露 + `avoid_print` 报错 | 用 `logger.debug`，提交前 grep |
 | Golden 本地跑失败 | 以为改坏了 | Windows 与 Linux 渲染不同，只信 CI |
-| 在 PowerShell 里参数被吞 | `melos run xxx -- --flag` 不生效 | 改用 `dart run tool/xxx.dart --flag` |
+| 在 PowerShell 里参数被吞 | `dart run tool/tasks.dart xxx -- --flag` 不生效 | 改用 `dart run tool/xxx.dart --flag` |
 | 插件里 import `modoo_core` | 依赖倒置，插件无法独立发布 | 只用 `plugin_api` 提供的能力 |
 | 中文标点硬编码进 UI | 换语言后标点错乱 | 文案进 ARB，标点跟随语言 |
 
@@ -222,7 +222,7 @@ class ReaderController extends _$ReaderController {
 
 一个改动算完成，必须同时满足：
 
-1. `melos run check` 全绿（format + analyze + test）。
+1. `dart run tool/tasks.dart check` 全绿（format + analyze + test）。
 2. 新逻辑有测试；修 bug 有回归测试（先失败后通过）。
 3. 没有新增 lint 告警，没有无理由的 `// ignore`。
 4. 改了模型/表/ARB → 生成物已重跑并提交。
@@ -234,7 +234,7 @@ class ReaderController extends _$ReaderController {
 **自检命令**（提交前固定跑）：
 
 ```bash
-melos run check          # format + analyze + test
+dart run tool/tasks.dart check          # format + analyze + test
 pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生成物 diff 检查
 ```
 
@@ -256,14 +256,14 @@ pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生�
 
 | 你改了什么 | 必须更新 |
 | --- | --- |
-| 新增/删除包 | `CODE_STYLE.md` §3.1 映射表、`melos.yaml`、CI |
+| 新增/删除包 | `CODE_STYLE.md` §3.1 映射表、根 `pubspec.yaml` 的 `workspace:`、CI |
 | 改变分层或依赖方向 | `CODE_STYLE.md` §3.2 + 新 ADR |
 | 新增插件能力接口 | `plugin_api` dartdoc + ADR + SDK 文档 |
 | 数据库语义变化 | `DEVELOPMENT_PLAN.md` §3.10 + 迁移测试 |
 | 里程碑范围变化 | `DEVELOPMENT_PLAN.md` §5（需用户确认） |
 | 新增依赖 | `THIRD_PARTY.md` + PR 说明四问 |
 | 用户可见行为变化 | `CHANGELOG.md` |
-| 新的命令/脚本 | 本文件 §3.2 + `melos.yaml` |
+| 新的命令/脚本 | 本文件 §3.2 + `tool/tasks.dart` 的 `_usage` |
 | 分支模型 / 推送 / 发版流程变化 | `GIT_WORKFLOW.md` + 仓库 Settings 同步调整 |
 
 ## 11. 何时停下来提问
@@ -295,7 +295,7 @@ pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生�
 
 写代码卡住时可以看这些（都是公开项目，注意只学结构不抄代码）：
 
-- 分层与插件：`melos` 官方示例、`very_good_cli` 的 monorepo 模板
+- 分层与插件：`very_good_cli` 的 monorepo 模板、`flame` 等 pub workspace 仓库的组织方式
 - 书源规则 DSL：legado（阅读）的规则文档，本项目做了减法
 - 分页与阅读器：各开源阅读器的分页实现差异很大，**以本项目计划 §3.5 为准**，不要照搬
 
@@ -306,5 +306,6 @@ pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生�
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
 | v1.0 | 2026-10-31 | 首版：阶段说明、命令、代码地图、10 条硬规则、7 个任务配方、陷阱与 DoD |
-| v1.1 | 2026-10-31 | 与 CODE_STYLE v1.1 对齐：新建插件改 `dart run tool/new_plugin.dart`、注册表改 `buildPluginRegistry()` + `melos run gen-registry`、硬规则 1 限定 `core ← 所有业务包`、自检命令改 `melos run check` / `tool/check.ps1`、补 lint 唯一豁免说明 |
+| v1.1 | 2026-10-31 | 与 CODE_STYLE v1.1 对齐：新建插件改 `dart run tool/new_plugin.dart`、注册表改 `buildPluginRegistry()` + `dart run tool/tasks.dart gen:registry`、硬规则 1 限定 `core ← 所有业务包`、自检命令改 `dart run tool/tasks.dart check` / `tool/check.ps1`、补 lint 唯一豁免说明 |
 | v1.2 | 2026-10-31 | 新增 `docs/GIT_WORKFLOW.md`（推送、分支、PR、发版）；必读顺序与冲突优先级加入该文档；代码地图与文档同步矩阵补行 |
+| v1.3 | 2026-10-31 | M0 落地后回填：阶段改为「M0 骨架已落地，12 个包」、命令面改 `dart run tool/tasks.dart`（弃用 melos）、注册表路径改 `registry.g.dart` / `buildPluginList()`、首行指向 `CONTRIBUTING.md`、文档同步矩阵把 `melos.yaml` 换成根 `pubspec.yaml` |

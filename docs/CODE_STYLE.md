@@ -49,7 +49,7 @@ print(debugOutput);
 
 ### 1.4 底线
 
-**CI 是唯一裁判。** 本地觉得"应该能过"不算过；`melos run check` 绿灯才算完成。详见 §2.3。
+**CI 是唯一裁判。** 本地觉得"应该能过"不算过；`dart run tool/tasks.dart check` 绿灯才算完成。详见 §2.3。
 
 ---
 
@@ -62,9 +62,9 @@ print(debugOutput);
 | `dart format` | `--line-length 100` | ✅ 提交前必须格式化 |
 | `flutter analyze` | strict 模式，见附录 A | ✅ |
 | `flutter_lints` | 基线规则集 | ✅ |
-| `custom_lint` | 自研分层规则（§3.2） | ✅ |
-| `riverpod_lint` | provider 误用检测 | ✅ |
-| `melos` | monorepo 脚本 | ✅ |
+| `custom_lint` | 自研分层规则（§3.2，M1 接入） | 计划 M1 |
+| `riverpod_lint` | provider 误用检测（M1 接入） | 计划 M1 |
+| `tool/tasks.dart` | 仓库统一任务入口（替代 melos） | ✅ |
 | `commitlint` | 提交信息校验 | ✅（CI + 本地 hook） |
 | `dart fix` | 自动修复 | 建议 |
 
@@ -81,24 +81,24 @@ build_runner 生成的文件一律不手写、不 review、不格式化：
 lib/generated/    # gen-l10n
 ```
 
-改完模型/表/ARB 后必须跑 `melos run gen`，并把生成结果一起提交。CI 会检查「生成后是否产生未提交的 diff」，有 diff 即失败。
+改完模型/表/ARB 后必须跑 `dart run tool/tasks.dart gen`，并把生成结果一起提交。CI 会检查「生成后是否产生未提交的 diff」，有 diff 即失败。
 
 ### 2.3 标准命令
 
 ```bash
-melos bootstrap            # 安装所有包依赖
-melos run gen              # build_runner + gen-l10n + gen-registry
-melos run gen-registry     # 只重生成插件注册表（gen 的子集）
-melos run format           # 格式化全仓
-melos run analyze          # 静态分析（含 custom_lint）
-melos run test             # 全部测试
-melos run check            # format --set-exit-if-changed + analyze + test（提交前必跑）
-melos run test:core        # 只跑核心包，日常高频
-melos run build:apk        # 构建 release APK
+flutter pub get            # 安装所有包依赖
+dart run tool/tasks.dart gen              # build_runner + gen-l10n + gen-registry
+dart run tool/tasks.dart gen:registry     # 只重生成插件注册表（gen 的子集）
+dart run tool/tasks.dart format           # 格式化全仓
+dart run tool/tasks.dart analyze          # 静态分析（含 custom_lint）
+dart run tool/tasks.dart test             # 全部测试
+dart run tool/tasks.dart check            # format --set-exit-if-changed + analyze + test（提交前必跑）
+dart run tool/tasks.dart test --scope core,domain,reader,plugin_api,plugin_host,data        # 只跑核心包，日常高频
+dart run tool/tasks.dart build:apk        # 构建 release APK
 dart run tool/new_plugin.dart --name format_fb2   # 插件脚手架
 ```
 
-`melos run check` 是**唯一可信的完成标准**，任何"我本地跑过单个测试"都不算。
+`dart run tool/tasks.dart check` 是**唯一可信的完成标准**，任何"我本地跑过单个测试"都不算。
 
 ---
 
@@ -154,20 +154,26 @@ dart run tool/new_plugin.dart --name format_fb2   # 插件脚手架
 全仓库**只有一处**允许 import `plugins/*`：
 
 ```
-apps/mobile/lib/src/plugins/registry.dart
+apps/mobile/lib/src/plugins/registry.g.dart
 ```
+
+内容由 `tool/gen_registry.dart` 生成（扫描 `plugins/` 下的 pubspec，要求每个插件在
+`lib/<包名>.dart` 导出顶层 `ModooPlugin createPlugin()`），**不接受手工维护** —— 手写一定会漏：
 
 ```dart
-// 唯一允许 import 插件实现的位置
-import 'package:modoo_format_epub/format_epub.dart';
-import 'package:modoo_format_txt/format_txt.dart';
+// GENERATED CODE - DO NOT MODIFY BY HAND.
+// Regenerate with: dart run tool/gen_registry.dart
 
-PluginRegistry buildPluginRegistry() => PluginRegistry()
-  ..add(const TxtFormatPlugin())
-  ..add(const EpubFormatPlugin());
+import 'package:modoo_plugin_api/modoo_plugin_api.dart';
+import 'package:modoo_format_txt/modoo_format_txt.dart' as modoo_format_txt;
+
+List<ModooPlugin> buildPluginList() => <ModooPlugin>[
+  modoo_format_txt.createPlugin(),
+];
 ```
 
-这个文件由 `tool/gen_registry.dart` 生成（扫描 `plugins/` 下的 pubspec），不接受手工维护 —— 手写一定会漏。
+App 壳只调用 `buildPluginList()`，把结果交给 `PluginRegistry`；`main.dart` 是唯一 import 这个生成文件的地方。
+新增插件后跑 `dart run tool/tasks.dart gen:registry` 即可，不要手改这份清单。
 
 ### 3.4 feature 内部结构
 
@@ -802,7 +808,7 @@ body 写**为什么**，不写"改了哪些文件"（diff 已经说明）。
 | 多余的 barrel / `package:x/src/` 导入 | 依赖不可见、编译变慢、绕过公共 API | 每包一个 `lib/<包名>.dart` 出口 |
 | 主线程解压/大正则 | 掉帧、ANR | `TaskRunner.run` |
 | 改已发布迁移 | 老用户升级必炸 | 追加新迁移 |
-| 手改 `*.g.dart` | 下次生成被覆盖 | 改源模型 + `melos run gen` |
+| 手改 `*.g.dart` | 下次生成被覆盖 | 改源模型 + `dart run tool/tasks.dart gen` |
 | `print` 调试残留 | 泄露信息、性能 | `logger.debug`，提交前 grep |
 | 用 `Future.delayed` 假装加载 | 掩盖真实性能问题 | 真实状态 |
 
@@ -951,7 +957,7 @@ logger.debug('chapter loaded', fields: {'bookId': book.id, 'chapter': idx, 'char
 
 提交前逐条过，全部 ✅ 才算完成：
 
-- [ ] `melos run check` 通过（format + analyze + test）
+- [ ] `dart run tool/tasks.dart check` 通过（format + analyze + test）
 - [ ] 没有 `print`、没有调试代码残留、没有注释掉的代码块
 - [ ] 没有新增 `// ignore` 缺理由的情况
 - [ ] 新代码有测试；修 bug 有回归测试
@@ -959,7 +965,7 @@ logger.debug('chapter loaded', fields: {'bookId': book.id, 'chapter': idx, 'char
 - [ ] 颜色/字号/间距来自 token，没有硬编码
 - [ ] 依赖方向没有跨界（`layer_dependency` 无告警）
 - [ ] 新增文件放对了位置，没有 `utils.dart`
-- [ ] 改动了模型/表/ARB → 已跑 `melos run gen` 并提交生成物
+- [ ] 改动了模型/表/ARB → 已跑 `dart run tool/tasks.dart gen` 并提交生成物
 - [ ] 数据库变更 → 迁移测试 + 未修改历史迁移
 - [ ] 公共 API 有英文 dartdoc
 - [ ] PR ≤ 400 行，只做一件事
