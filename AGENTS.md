@@ -15,7 +15,7 @@
 | --- | --- |
 | 阶段 | **M0 骨架已落地**：pub workspace monorepo、12 个包（`apps/mobile` + 10 个 `packages/*` + `plugins/format_txt`）、App 壳、CI、工具脚本齐全，`check` 全绿 |
 | 可跑 | `flutter pub get`、`dart run tool/tasks.dart {gen,analyze,test,check}`、`pwsh tool/check.ps1` |
-| 还不能跑 | APK 构建（本机缺 Android SDK）、`docs/plugin-sdk/`（M4 才有内容） |
+| 还不能跑 | `docs/plugin-sdk/`（M4 才有内容）、release 签名构建（现用 debug 签名） |
 | 未完成 | M1 功能：文件选择与导入、阅读页、分页渲染；`docs/plugin-sdk/` 与正式签名 |
 
 **M0 只是骨架**：书籍导入、阅读页、分页渲染都还没有，`apps/mobile` 只有书架空态与主题切换两个页面。写功能前后都要确认自己在哪个里程碑（[docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) §5）。
@@ -37,11 +37,22 @@
 
 | 组件 | 状态 |
 | --- | --- |
-| Flutter / Dart | ✅ `D:\Download\Scoop\apps\flutter\current` |
+| Flutter / Dart | ✅ `D:\Download\Scoop\apps\flutter\current`（Flutter 3.44.4 / Dart 3.12.2） |
 | Git / JDK 17 / Gradle | ✅ |
-| Android SDK（adb / platform-tools） | ❌ **未安装**，`ANDROID_HOME` 未设置 |
+| Android SDK | ✅ `D:\Download\Scoop\persist\jetbrains-toolbox\.settings\.AndroidStudio\SDK`（Android Studio 自带；`ANDROID_HOME` 已写入用户环境变量） |
+| 模拟器 | ✅ AVD `Pixel_3a_API_36`（Android 16 / API 36，x86_64） |
+| APK 构建 | ✅ `flutter build apk --debug` 已验证（Gradle assembleDebug ≈ 124s） |
 
-首次构建 Android 前必须先装 SDK 并 `flutter doctor` 全绿，否则 APK 相关任务无法验证。
+**Android 相关命令**（`platform-tools` 不在 PATH 时先 `$env:PATH = "$env:ANDROID_HOME\platform-tools;" + $env:PATH`）：
+
+```powershell
+Start-Process "$env:ANDROID_HOME\emulator\emulator.exe" -ArgumentList '-avd','Pixel_3a_API_36'
+adb wait-for-device
+adb install -r apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
+adb shell am start -n com.modooreader.modoo_reader/.MainActivity
+```
+
+截图用 `adb shell screencap -p /sdcard/x.png` + `adb pull`（`exec-out >` 在 PowerShell 会写坏二进制）；屏幕黑多半是锁屏/息屏，先 `adb shell input keyevent 26` 两次再上滑解锁。
 
 ### 3.2 命令（在仓库根执行）
 
@@ -240,7 +251,7 @@ pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生�
 
 ## 9. 禁止清单
 
-- ❌ 直接 push / force-push 到 `main`
+- ❌ force-push 到 `main`、删除 `main`、移动已发布的 tag（单人阶段**允许**直接 commit + push `main`，推前 `check` 必须绿）
 - ❌ 提交密钥、签名文件、`.env`、真实书源、受版权保护的书籍样本
 - ❌ 顺手重构无关代码（单独开 PR）
 - ❌ 删除或跳过失败的测试来"让 CI 变绿"
@@ -309,3 +320,4 @@ pwsh tool/check.ps1      # Windows 上同上，另含 print 残留扫描与生�
 | v1.1 | 2026-10-31 | 与 CODE_STYLE v1.1 对齐：新建插件改 `dart run tool/new_plugin.dart`、注册表改 `buildPluginRegistry()` + `dart run tool/tasks.dart gen:registry`、硬规则 1 限定 `core ← 所有业务包`、自检命令改 `dart run tool/tasks.dart check` / `tool/check.ps1`、补 lint 唯一豁免说明 |
 | v1.2 | 2026-10-31 | 新增 `docs/GIT_WORKFLOW.md`（推送、分支、PR、发版）；必读顺序与冲突优先级加入该文档；代码地图与文档同步矩阵补行 |
 | v1.3 | 2026-10-31 | M0 落地后回填：阶段改为「M0 骨架已落地，12 个包」、命令面改 `dart run tool/tasks.dart`（弃用 melos）、注册表路径改 `registry.g.dart` / `buildPluginList()`、首行指向 `CONTRIBUTING.md`、文档同步矩阵把 `melos.yaml` 换成根 `pubspec.yaml` |
+| v1.4 | 2026-10-31 | 单分支策略：§9 改为「允许直接 commit + push `main`，禁止 force-push / 删除 / 移动 tag」；与 `GIT_WORKFLOW.md` v1.1、`CODE_STYLE.md` §14.2 对齐 |

@@ -753,10 +753,11 @@ body 写**为什么**，不写"改了哪些文件"（diff 已经说明）。
 
 ### 14.2 分支与合并
 
-- trunk-based：`main` 常绿，功能分支存活 ≤ 3 天。
-- 分支名 `feat/reader-pagination`、`fix/txt-gbk-detection`。
-- 禁止直接 push `main`；禁止 `--force` 到 `main`。
-- 合并用 **squash**，保留一条干净的 commit。
+- **单分支**：仓库只有 `main`，改动直接提交，不切功能分支（单人维护阶段）。
+- 提交前 `dart run tool/tasks.dart check` 必须绿；`main` 任何时刻都必须可发布。
+- **禁止** `--force` 到 `main`、禁止删除 `main`、禁止移动已发布的 tag。
+- 外部贡献者用 fork + PR，合并用 **squash**，保留一条干净的 commit。
+- 何时重新启用功能分支见 [GIT_WORKFLOW.md](GIT_WORKFLOW.md) §1（出现第二个长期维护者或第一位外部贡献者）。
 
 ### 14.3 PR 规模
 

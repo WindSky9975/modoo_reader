@@ -47,11 +47,12 @@ pwsh tool/check.ps1                   # Windows 上等价，另含 print 残留�
 
 细节见 [`docs/GIT_WORKFLOW.md`](docs/GIT_WORKFLOW.md)，这里只列要点：
 
-- 分支名：`feat/<slug>`、`fix/<slug>`、`docs/<slug>`、`chore/<slug>`、`release/<version>`、`hotfix/<slug>`；存活 ≤ 3 天。
+- **维护者**：仓库只有 `main` 一个分支，改动直接提交到 `main`，推之前 `dart run tool/tasks.dart check` 必须绿。
+- **外部贡献者**：fork 后在自己仓库开分支，向 `main` 提 PR；分支名 `feat/<slug>`、`fix/<slug>`、`docs/<slug>`。
 - commit：`<type>(<scope>): <祈使句英文，≤72 字符>`，正文写「为什么」。
-- **不直接 push `main`**，不 force-push 别人的分支，不动已发布的 tag。
+- 任何人都不 force-push `main`、不删 `main`、不动已发布的 tag。
 - PR ≤ 400 行、只做一件事、描述里写清「为什么 / 改了什么 / 怎么验 / 风险与回滚」。
-- 合并只用 squash；CI 不绿不合并。
+- PR 合并只用 squash；CI 不绿不合并。
 
 ## 4. 完成定义（DoD）
 
